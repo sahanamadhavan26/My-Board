@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="My Board">
+<title>My Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+
+[data-theme="light"]{
+  --bg:#FBFBFA; --bg-sidebar:#F7F6F3; --surface:#FFFFFF; --surface-hover:#F2F1ED;
+  --border:rgba(0,0,0,0.07); --border-strong:rgba(0,0,0,0.12);
+  --text:#37352F; --text-secondary:#787774; --text-tertiary:#9B9A97;
+  --accent:#2F7A60; --accent-bg:rgba(47,122,96,0.1); --accent-text:#236050;
+  --blue:#2383E2; --blue-bg:rgba(35,131,226,0.1); --blue-text:#1A6BB8;
+  --amber:#D9730D; --amber-bg:rgba(217,115,13,0.1); --amber-text:#B0610A;
+  --red:#E03E3E; --red-bg:rgba(224,62,62,0.1); --red-text:#C03333;
+  --purple:#9065B0; --purple-bg:rgba(144,101,176,0.1); --purple-text:#7A4F9A;
+  --shadow:0 1px 2px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.03);
+}
+[data-theme="dark"]{
+  --bg:#191919; --bg-sidebar:#202020; --surface:#252525; --surface-hover:#2E2E2E;
+  --border:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.14);
+  --text:#E9E9E7; --text-secondary:#9B9B99; --text-tertiary:#6F6F6D;
+  --accent:#4DAB8E; --accent-bg:rgba(77,171,142,0.13); --accent-text:#6FC3A6;
+  --blue:#5AA7F0; --blue-bg:rgba(90,167,240,0.13); --blue-text:#7DBBF5;
+  --amber:#E6A156; --amber-bg:rgba(230,161,86,0.13); --amber-text:#EFB876;
+  --red:#EB7777; --red-bg:rgba(235,119,119,0.13); --red-text:#F09999;
+  --purple:#B49BD6; --purple-bg:rgba(180,155,214,0.13); --purple-text:#C7B3E5;
+  --shadow:0 1px 2px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.15);
+}
+
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:15px; line-height:1.5; min-height:100vh;
+  transition:background .2s,color .2s;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ===== APP SHELL ===== */
+.app{display:flex; min-height:100vh; align-items:flex-start;}
+html,body{overflow-x:hidden;}
+
+/* ===== SIDEBAR ===== */
+.sidebar{
+  width:248px; background:var(--bg-sidebar); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; padding:12px 8px; flex-shrink:0;
+  position:sticky; top:0; height:100vh; overflow-y:auto;
+}
+.sidebar-top{display:flex; align-items:center; justify-content:space-between; padding:6px 8px 14px;}
+.workspace-name{font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px;}
+.workspace-icon{width:22px; height:22px; border-radius:5px; background:var(--accent); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0;}
+.theme-toggle{background:none; border:none; cursor:pointer; color:var(--text-tertiary); padding:6px; border-radius:6px; display:flex; align-items:center; font-size:16px; transition:all .15s;}
+.theme-toggle:hover{background:var(--surface-hover); color:var(--text);}
+
+.nav-section{margin-bottom:4px;}
+.nav-section-label{font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.06em; padding:14px 12px 6px;}
+.nav-item{display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:6px; cursor:pointer; font-size:14px; color:var(--text-secondary); transition:all .1s; user-select:none;}
+.nav-item:hover{background:var(--surface-hover); color:var(--text);}
+.nav-item.active{background:var(--surface-hover); color:var(--text); font-weight:500;}
+.nav-item i{font-size:17px; flex-shrink:0; width:17px;}
+.nav-item .nav-label{flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.nav-badge{font-size:11px; font-weight:600; color:var(--text-tertiary); flex-shrink:0;}
+.acct-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+
+.add-acct-row{display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:6px; cursor:pointer; font-size:14px; color:var(--text-tertiary); transition:all .1s;}
+.add-acct-row:hover{background:var(--surface-hover); color:var(--text-secondary);}
+.add-acct-row i{font-size:17px; width:17px;}
+
+/* ===== MOBILE TOP BAR ===== */
+.mobile-bar{display:none; background:var(--surface); border-bottom:1px solid var(--border); padding:10px 14px; position:sticky; top:0; z-index:20; align-items:center; justify-content:space-between; gap:10px;}
+.mobile-bar-left{display:flex; align-items:center; gap:8px;}
+.mobile-menu-btn{background:none; border:none; cursor:pointer; color:var(--text); font-size:20px; padding:4px; display:flex;}
+.mobile-title{font-size:15px; font-weight:600;}
+.mobile-bar-right{display:flex; align-items:center; gap:8px;}
+
+.mobile-nav-panel{display:none; background:var(--bg-sidebar); border-bottom:1px solid var(--border); padding:8px;}
+.mobile-nav-panel.open{display:block;}
+
+/* ===== MAIN CONTENT ===== */
+.main{flex:1 1 0%; min-width:0; display:flex; flex-direction:column;}
+.page{padding:32px 48px; max-width:900px; width:100%; margin:0 auto;}
+.page-header{margin-bottom:28px;}
+.page-icon-row{display:flex; align-items:center; gap:12px; margin-bottom:8px;}
+.page-icon{width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;}
+.page-title{font-size:28px; font-weight:700; letter-spacing:-0.01em;}
+.page-subtitle{font-size:14px; color:var(--text-secondary); margin-top:2px;}
+
+/* ===== PROPERTY ROW (Notion style metadata) ===== */
+.prop-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px;}
+.prop-pill{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary); background:var(--surface-hover); padding:5px 10px; border-radius:6px; cursor:default;}
+.prop-pill i{font-size:14px;}
+.prop-pill.colored{font-weight:500;}
+
+/* ===== TABS (segmented) ===== */
+.seg-tabs{display:flex; gap:2px; background:var(--surface-hover); border-radius:8px; padding:3px; margin-bottom:24px; width:fit-content;}
+.seg-tab{padding:7px 16px; font-size:13px; font-weight:500; border:none; border-radius:6px; background:transparent; color:var(--text-secondary); cursor:pointer; transition:all .15s; font-family:inherit;}
+.seg-tab.active{background:var(--surface); color:var(--text); box-shadow:var(--shadow);}
+
+/* ===== FILTER CHIPS ===== */
+.filter-row{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; align-items:center;}
+.filter-chip{display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:500; border:1px solid var(--border); background:var(--surface); color:var(--text-secondary); cursor:pointer; transition:all .15s; font-family:inherit;}
+.filter-chip:hover{border-color:var(--border-strong);}
+.filter-chip.active{background:var(--text); color:var(--bg); border-color:var(--text);}
+.filter-chip .count{font-size:11px; opacity:.65;}
+.filter-chip.fc-amber.active{background:var(--amber); color:white; border-color:var(--amber);}
+.filter-chip.fc-blue.active{background:var(--blue); color:white; border-color:var(--blue);}
+.filter-chip.fc-accent.active{background:var(--accent); color:white; border-color:var(--accent);}
+.filter-chip.fc-red.active{background:var(--red); color:white; border-color:var(--red);}
+
+/* ===== QUICK ADD ===== */
+.quick-add{display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface); margin-bottom:20px; transition:all .15s;}
+.quick-add:focus-within{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}
+.quick-add i{color:var(--text-tertiary); font-size:18px; flex-shrink:0;}
+.quick-add input{flex:1; border:none; background:none; font-size:14px; color:var(--text); font-family:inherit; outline:none;}
+.quick-add input::placeholder{color:var(--text-tertiary);}
+.quick-add-btn{font-size:13px; font-weight:500; color:var(--text-secondary); background:var(--surface-hover); border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-family:inherit; flex-shrink:0;}
+.quick-add-btn:hover{color:var(--text);}
+
+/* ===== TASK GROUPS (Notion-style list, no kanban cards) ===== */
+.task-group{margin-bottom:8px;}
+.task-group-hdr{display:flex; align-items:center; gap:8px; padding:8px 6px; cursor:pointer; user-select:none; border-radius:6px;}
+.task-group-hdr:hover{background:var(--surface-hover);}
+.task-group-hdr i.chev{font-size:14px; color:var(--text-tertiary); transition:transform .15s;}
+.task-group-hdr.collapsed i.chev{transform:rotate(-90deg);}
+.tg-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+.tg-name{font-size:13px; font-weight:600; color:var(--text-secondary);}
+.tg-count{font-size:12px; color:var(--text-tertiary); font-weight:400;}
+.task-group-body{display:flex; flex-direction:column;}
+.task-group-body.collapsed{display:none;}
+
+.task-row{display:flex; align-items:flex-start; gap:12px; padding:9px 6px 9px 28px; border-radius:6px; cursor:pointer; transition:background .1s;}
+.task-row:hover{background:var(--surface-hover);}
+.task-row:hover .task-row-actions{opacity:1;}
+.task-checkbox{width:18px; height:18px; border-radius:50%; border:1.5px solid var(--border-strong); flex-shrink:0; margin-top:1px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; color:white; transition:all .15s; background:transparent;}
+.task-checkbox.checked{background:var(--accent); border-color:var(--accent);}
+.task-checkbox:hover{border-color:var(--accent);}
+.task-row-body{flex:1; min-width:0;}
+.task-row-text{font-size:14px; color:var(--text); line-height:1.5;}
+.task-row-text.done{color:var(--text-tertiary); text-decoration:line-through;}
+.task-row-meta{display:flex; gap:6px; margin-top:4px; flex-wrap:wrap; align-items:center;}
+.meta-tag{display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-secondary); background:var(--surface-hover); padding:2px 8px; border-radius:5px;}
+.meta-tag i{font-size:13px;}
+.meta-tag.overdue{color:var(--red-text); background:var(--red-bg);}
+.meta-tag.priority-high{color:var(--red-text); background:var(--red-bg);}
+.meta-tag.priority-medium{color:var(--amber-text); background:var(--amber-bg);}
+.meta-tag.priority-low{color:var(--accent-text); background:var(--accent-bg);}
+.task-row-actions{display:flex; gap:4px; opacity:0; transition:opacity .15s; flex-shrink:0;}
+.row-action-btn{background:none; border:1px solid var(--border); border-radius:6px; width:26px; height:26px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-tertiary); font-size:13px; transition:all .15s;}
+.row-action-btn:hover{color:var(--text); border-color:var(--border-strong); background:var(--surface);}
+.row-action-btn.danger:hover{color:var(--red-text); border-color:var(--red);}
+
+.empty-group{padding:10px 6px 10px 28px; font-size:13px; color:var(--text-tertiary);}
+
+/* ===== NOTES (Notion page-list style) ===== */
+.note-page{border:1px solid var(--border); border-radius:10px; background:var(--surface); margin-bottom:10px; overflow:hidden; transition:box-shadow .15s;}
+.note-page:hover{box-shadow:var(--shadow);}
+.note-page-hdr{padding:16px 18px 12px; cursor:pointer;}
+.note-page-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+.note-page-icon{width:32px; height:32px; border-radius:7px; background:var(--purple-bg); color:var(--purple-text); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;}
+.note-page-titles{flex:1; min-width:0;}
+.note-page-title{font-size:15px; font-weight:600; color:var(--text); margin-bottom:2px;}
+.note-page-subject{font-size:13px; color:var(--text-secondary);}
+.note-page-del{background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:16px; padding:4px; border-radius:5px; flex-shrink:0;}
+.note-page-del:hover{color:var(--red-text); background:var(--red-bg);}
+.note-page-meta{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; padding-left:44px;}
+
+.note-page-body{padding:0 18px 16px 18px;}
+.note-divider{height:1px; background:var(--border); margin:0 18px;}
+.note-summary{background:var(--accent-bg); border-radius:8px; padding:14px 16px; margin:14px 0;}
+.note-summary-label{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--accent-text); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px;}
+.note-summary-text{font-size:13px; color:var(--text); line-height:1.75; white-space:pre-wrap;}
+.note-raw{background:var(--surface-hover); border-radius:8px; padding:14px 16px; margin-top:10px;}
+.note-raw-label{font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px;}
+.note-raw-text{font-size:13px; color:var(--text-secondary); line-height:1.7; white-space:pre-wrap;}
+.note-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+.note-action-btn{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500; color:var(--text-secondary); background:var(--surface-hover); border:none; border-radius:6px; padding:7px 12px; cursor:pointer; font-family:inherit; transition:all .15s;}
+.note-action-btn:hover{color:var(--text);}
+.note-action-btn.ai{color:var(--purple-text); background:var(--purple-bg);}
+.note-action-btn.ai:hover{opacity:.85;}
+
+/* ===== NEW NOTE FORM ===== */
+.new-note-card{border:1px solid var(--border); border-radius:10px; background:var(--surface); padding:18px; margin-bottom:20px;}
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;}
+.form-field-label{font-size:12px; font-weight:500; color:var(--text-secondary); margin-bottom:6px; display:block;}
+.form-input{width:100%; padding:9px 12px; font-size:14px; border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); font-family:inherit; transition:border-color .15s;}
+.form-input:focus{outline:none; border-color:var(--accent);}
+.form-input::placeholder{color:var(--text-tertiary);}
+textarea.form-input{resize:vertical; min-height:100px; line-height:1.6; font-family:inherit;}
+.form-actions{display:flex; gap:8px; margin-top:14px;}
+.btn-primary{background:var(--accent); color:white; border:none; border-radius:7px; padding:9px 18px; font-size:14px; font-weight:500; cursor:pointer; font-family:inherit; transition:opacity .15s;}
+.btn-primary:hover{opacity:.9;}
+.btn-primary:disabled{opacity:.5; cursor:not-allowed;}
+.btn-secondary{background:var(--surface-hover); color:var(--text-secondary); border:none; border-radius:7px; padding:9px 18px; font-size:14px; font-weight:500; cursor:pointer; font-family:inherit;}
+
+/* ===== SCHEDULE VIEW ===== */
+.schedule-day{margin-bottom:24px;}
+.schedule-day-label{font-size:13px; font-weight:600; color:var(--text-secondary); padding:0 6px 10px; display:flex; align-items:center; gap:8px;}
+.schedule-day-label .badge-today{background:var(--accent); color:white; font-size:11px; font-weight:600; padding:2px 8px; border-radius:5px;}
+.event-row{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface); margin-bottom:8px; transition:box-shadow .15s;}
+.event-row:hover{box-shadow:var(--shadow);}
+.event-time{font-size:13px; font-weight:600; color:var(--text); min-width:64px; text-align:center; background:var(--surface-hover); padding:8px 6px; border-radius:6px;}
+.event-time-sub{font-size:10px; color:var(--text-tertiary); font-weight:400; margin-top:2px;}
+.event-color{width:3px; align-self:stretch; border-radius:2px; flex-shrink:0;}
+.event-body{flex:1; min-width:0;}
+.event-title{font-size:14px; font-weight:500; color:var(--text);}
+.event-sub{font-size:12px; color:var(--text-secondary); margin-top:2px; display:flex; gap:8px; flex-wrap:wrap;}
+.event-del{background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:16px; padding:4px; border-radius:5px; flex-shrink:0;}
+.event-del:hover{color:var(--red-text); background:var(--red-bg);}
+
+/* ===== EMPTY STATES ===== */
+.empty-state{display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; color:var(--text-tertiary); text-align:center;}
+.empty-state i{font-size:40px; margin-bottom:16px; opacity:.4;}
+.empty-state-title{font-size:15px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;}
+.empty-state-sub{font-size:13px; max-width:320px; line-height:1.6;}
+
+/* ===== TASK DETAIL DRAWER ===== */
+.drawer-overlay{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:60;}
+.drawer-overlay.open{display:block;}
+.drawer{position:fixed; bottom:0; left:0; right:0; background:var(--surface); border-radius:16px 16px 0 0; border-top:1px solid var(--border); z-index:61; max-height:92vh; overflow-y:auto; transform:translateY(100%); transition:transform .28s cubic-bezier(.32,.72,0,1);}
+.drawer.open{transform:translateY(0);}
+@media(min-width:769px){
+  .drawer{left:auto; right:0; top:0; bottom:0; width:420px; border-radius:0; border-left:1px solid var(--border); border-top:none; transform:translateX(100%);}
+  .drawer.open{transform:translateX(0);}
+}
+.drawer-handle{width:36px; height:4px; background:var(--border-strong); border-radius:2px; margin:12px auto 0;}
+@media(min-width:769px){ .drawer-handle{display:none;} }
+.drawer-inner{padding:20px 24px 36px;}
+.drawer-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:20px;}
+.drawer-title{font-size:18px; font-weight:600; line-height:1.4; flex:1;}
+.drawer-close{background:var(--surface-hover); border:none; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer; color:var(--text-secondary); flex-shrink:0;}
+.drawer-props{display:flex; flex-direction:column; gap:0; margin-bottom:20px;}
+.drawer-prop{display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--border);}
+.drawer-prop-label{font-size:13px; color:var(--text-tertiary); width:90px; flex-shrink:0; display:flex; align-items:center; gap:6px;}
+.drawer-prop-label i{font-size:15px;}
+.drawer-prop-value{font-size:13px; color:var(--text); font-weight:500; flex:1;}
+.drawer-actions{display:flex; gap:8px; flex-wrap:wrap;}
+.dbtn{flex:1; min-width:120px; padding:10px; font-size:13px; font-weight:500; border:1px solid var(--border); border-radius:8px; cursor:pointer; font-family:inherit; background:var(--surface); color:var(--text-secondary); transition:all .15s;}
+.dbtn:hover{border-color:var(--border-strong);}
+.dbtn.accent{background:var(--accent-bg); color:var(--accent-text); border-color:transparent;}
+.dbtn.blue{background:var(--blue-bg); color:var(--blue-text); border-color:transparent;}
+.dbtn.danger{background:var(--red-bg); color:var(--red-text); border-color:transparent;}
+
+/* ===== ADD ACCOUNT MODAL ===== */
+.modal-overlay{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:70; align-items:center; justify-content:center; padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface); border-radius:12px; border:1px solid var(--border); padding:22px; width:100%; max-width:420px;}
+.modal h3{font-size:16px; font-weight:600; margin-bottom:16px;}
+.modal-actions{display:flex; gap:8px; margin-top:6px;}
+
+/* ===== LOADING DOTS ===== */
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-3px);opacity:1}}
+.ldot{width:5px; height:5px; border-radius:50%; background:currentColor; animation:bounce 1.2s infinite; display:inline-block;}
+.ldot:nth-child(2){animation-delay:.2s} .ldot:nth-child(3){animation-delay:.4s}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .mobile-bar{display:flex;}
+  .page{padding:16px;}
+  .page-title{font-size:22px;}
+  .form-grid{grid-template-columns:1fr;}
+  .note-page-meta{padding-left:0;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- DESKTOP SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="workspace-name"><div class="workspace-icon">B</div>My Board</div>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle dark/light mode" style="font-size:18px;width:32px;height:32px;justify-content:center;border:1px solid var(--border);border-radius:8px;">🌙</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" id="nav-overview" onclick="goView('overview')"><i class="ti ti-layout-grid"></i><span class="nav-label">Overview</span></div>
+      <div class="nav-item" id="nav-status" onclick="goView('status')"><i class="ti ti-list-check"></i><span class="nav-label">Status board</span></div>
+      <div class="nav-item" id="nav-schedule" onclick="goView('schedule')"><i class="ti ti-calendar"></i><span class="nav-label">Schedule</span></div>
+      <div class="nav-item" id="nav-notes-all" onclick="goView('all-notes')"><i class="ti ti-notes"></i><span class="nav-label">All notes</span><span class="nav-badge" id="sb-notes-count">0</span></div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Accounts</div>
+      <div id="sidebar-accounts"></div>
+      <div class="add-acct-row" onclick="openModal()"><i class="ti ti-plus"></i><span>Add account</span></div>
+    </div>
+  </div>
+
+  <!-- MOBILE TOP BAR -->
+  <div class="mobile-bar">
+    <div class="mobile-bar-left" onclick="toggleMobilePanel()" style="cursor:pointer;">
+      <div class="workspace-icon" id="mobile-panel-toggle">B</div>
+      <span class="mobile-title" id="mobile-title">Overview</span>
+      <i class="ti ti-chevron-down" style="font-size:14px;color:var(--text-tertiary);" aria-hidden="true"></i>
+    </div>
+    <div class="mobile-bar-right">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle dark/light mode" style="font-size:18px;width:32px;height:32px;justify-content:center;border:1px solid var(--border);border-radius:8px;" id="mtheme-icon">🌙</button>
+      <button class="theme-toggle" onclick="openModal()" aria-label="Add account"><i class="ti ti-plus"></i></button>
+    </div>
+  </div>
+  <div class="mobile-nav-panel" id="mobile-nav-panel"></div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="page" id="page"></div>
+  </div>
+</div>
+
+<!-- TASK DRAWER -->
+<div class="drawer-overlay" id="dov" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-inner">
+    <div class="drawer-top">
+      <div class="drawer-title" id="dr-title"></div>
+      <button class="drawer-close" onclick="closeDrawer()" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="drawer-props" id="dr-props"></div>
+    <div class="drawer-actions" id="dr-actions"></div>
+  </div>
+</div>
+
+<!-- ADD ACCOUNT MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Add account</h3>
+    <label class="form-field-label">Company name</label>
+    <input class="form-input" id="a-name" placeholder="e.g. Telamon" style="margin-bottom:12px;" />
+    <label class="form-field-label">Contact name (optional)</label>
+    <input class="form-input" id="a-contact" placeholder="e.g. Graham Thomas" />
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()" style="flex:1;">Cancel</button>
+      <button class="btn-primary" onclick="saveAccount()" style="flex:1;">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ STATE ============
+const ACCOUNT_COLORS=['#9065B0','#2F7A60','#2383E2','#D9730D','#E03E3E','#0B7285','#6A9955','#C2185B'];
+let accounts=[], events=[], theme='light';
+try{
+  accounts=JSON.parse(localStorage.getItem('ws-accounts')||'[]');
+}catch(e){ accounts=[]; }
+try{
+  events=JSON.parse(localStorage.getItem('ws-events')||'[]');
+}catch(e){ events=[]; }
+try{
+  theme=localStorage.getItem('ws-theme')||'light';
+}catch(e){ theme='light'; }
+let currentView='overview'; // 'overview' | 'schedule' | 'all-notes' | acctId(number)
+let drawerAcct=null, drawerTask=null;
+let collapsedGroups=new Set();
+let activeTaskFilter='all';
+
+// ============ INIT ============
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',theme);
+  const emoji = theme==='dark' ? '☀️' : '🌙';
+  const tBtn=document.getElementById('theme-toggle');
+  if(tBtn) tBtn.textContent = emoji;
+  const mIcon = document.getElementById('mtheme-icon');
+  if(mIcon) mIcon.textContent = emoji;
+  localStorage.setItem('ws-theme',theme);
+}
+function toggleTheme(){theme=theme==='dark'?'light':'dark';applyTheme();}
+
+function save(){
+  try{
+    localStorage.setItem('ws-accounts',JSON.stringify(accounts));
+    localStorage.setItem('ws-events',JSON.stringify(events));
+  }catch(e){ console.error('save failed',e); }
+}
+
+function acColor(id){
+  const idx=accounts.findIndex(a=>a.id===id);
+  return ACCOUNT_COLORS[idx>=0?idx%ACCOUNT_COLORS.length:0];
+}
+function acIdx(id){return accounts.findIndex(a=>a.id===id);}
+
+// ============ NAVIGATION ============
+function goView(v){
+  currentView=v;
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+  closeMobilePanel();
+}
+
+// ============ MODAL ============
+function openModal(){document.getElementById('modal').classList.add('open');setTimeout(()=>document.getElementById('a-name').focus(),80);}
+function closeModal(){document.getElementById('modal').classList.remove('open');document.getElementById('a-name').value='';document.getElementById('a-contact').value='';}
+function saveAccount(){
+  const name=document.getElementById('a-name').value.trim();
+  if(!name)return;
+  const acct={id:Date.now(),name,contact:document.getElementById('a-contact').value.trim(),tasks:[],notes:[]};
+  accounts.unshift(acct);
+  save();
+  closeModal();
+  goView(acct.id);
+}
+function deleteAccount(id){
+  if(!confirm('Delete this account and all its data?'))return;
+  accounts=accounts.filter(a=>a.id!==id);
+  events=events.filter(e=>e.acctId!==id);
+  save();
+  if(currentView===id) currentView='overview';
+  renderSidebar(); renderMobileNav(); renderPage();
+}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+
+// ============ SIDEBAR ============
+function renderSidebar(){
+  const el=document.getElementById('sidebar-accounts');
+  document.getElementById('nav-overview').classList.toggle('active',currentView==='overview');
+  document.getElementById('nav-status').classList.toggle('active',currentView==='status');
+  document.getElementById('nav-schedule').classList.toggle('active',currentView==='schedule');
+  document.getElementById('nav-notes-all').classList.toggle('active',currentView==='all-notes');
+  document.getElementById('sb-notes-count').textContent=accounts.reduce((s,a)=>s+a.notes.length,0);
+
+  el.innerHTML=accounts.map(a=>{
+    const col=acColor(a.id);
+    const open=a.tasks.filter(t=>t.status!=='done').length;
+    return `<div class="nav-item ${currentView===a.id?'active':''}" onclick="goView(${a.id})">
+      <span class="acct-dot" style="background:${col};"></span>
+      <span class="nav-label">${esc(a.name)}</span>
+      ${open>0?`<span class="nav-badge">${open}</span>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderMobileNav(){
+  const el=document.getElementById('mobile-nav-panel');
+
+  let html=`
+    <div class="nav-item ${currentView==='overview'?'active':''}" onclick="goView('overview')"><i class="ti ti-layout-grid"></i><span class="nav-label">Overview</span></div>
+    <div class="nav-item ${currentView==='status'?'active':''}" onclick="goView('status')"><i class="ti ti-list-check"></i><span class="nav-label">Status board</span></div>
+    <div class="nav-item ${currentView==='schedule'?'active':''}" onclick="goView('schedule')"><i class="ti ti-calendar"></i><span class="nav-label">Schedule</span></div>
+    <div class="nav-item ${currentView==='all-notes'?'active':''}" onclick="goView('all-notes')"><i class="ti ti-notes"></i><span class="nav-label">All notes</span><span class="nav-badge">${accounts.reduce((s,a)=>s+a.notes.length,0)}</span></div>
+  `;
+  if(accounts.length){
+    html+=`<div class="nav-section-label">Accounts</div>`;
+    html+=accounts.map(a=>{
+      const col=acColor(a.id);
+      const open=a.tasks.filter(t=>t.status!=='done').length;
+      return `<div class="nav-item ${currentView===a.id?'active':''}" onclick="goView(${a.id})">
+        <span class="acct-dot" style="background:${col};"></span>
+        <span class="nav-label">${esc(a.name)}</span>
+        ${open>0?`<span class="nav-badge">${open}</span>`:''}
+      </div>`;
+    }).join('');
+  }
+  html+=`<div class="add-acct-row" onclick="openModal();closeMobilePanel();"><i class="ti ti-plus"></i><span>Add account</span></div>`;
+  el.innerHTML=html;
+
+  const titles={overview:'Overview',status:'Status board',schedule:'Schedule','all-notes':'All notes'};
+  let title = titles[currentView];
+  if(typeof currentView==='number'){
+    const a=accounts.find(a=>a.id===currentView);
+    title=a?a.name:'Overview';
+  }
+  document.getElementById('mobile-title').textContent=title||'Overview';
+}
+
+function toggleMobilePanel(){
+  document.getElementById('mobile-nav-panel').classList.toggle('open');
+}
+function closeMobilePanel(){
+  document.getElementById('mobile-nav-panel').classList.remove('open');
+}
+
+// ============ HELPERS ============
+function esc(s){
+  const d=document.createElement('div');
+  d.textContent=s||'';
+  return d.innerHTML;
+}
+function isOverdue(due){
+  if(!due)return false;
+  return new Date(due+'T00:00:00')<new Date(new Date().toDateString());
+}
+function fmtDate(due){
+  if(!due)return '';
+  const d=new Date(due+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);
+  const diff=Math.round((d-today)/864e5);
+  if(diff===0)return 'Today';
+  if(diff===1)return 'Tomorrow';
+  if(diff===-1)return 'Yesterday';
+  if(diff<0)return Math.abs(diff)+'d overdue';
+  if(diff<7)return 'In '+diff+'d';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function statusMeta(s){
+  return {
+    todo:{label:'To do',color:'amber',icon:'ti-circle-dashed'},
+    inprog:{label:'In progress',color:'blue',icon:'ti-progress'},
+    done:{label:'Done',color:'accent',icon:'ti-circle-check'},
+    pending:{label:'On hold',color:'red',icon:'ti-player-pause'}
+  }[s]||{label:s,color:'',icon:'ti-circle'};
+}
+
+// ============ PAGE ROUTER ============
+function renderPage(){
+  const el=document.getElementById('page');
+  if(currentView==='overview') el.innerHTML=renderOverview();
+  else if(currentView==='status') el.innerHTML=renderStatusBoard();
+  else if(currentView==='schedule') el.innerHTML=renderSchedule();
+  else if(currentView==='all-notes') el.innerHTML=renderAllNotes();
+  else el.innerHTML=renderAccountPage(currentView);
+  attachDynamicHandlers();
+}
+
+function attachDynamicHandlers(){
+  populateAssigneeOptions();
+}
+
+// ============ OVERVIEW ============
+function renderOverview(){
+  const allTasks=accounts.flatMap(a=>a.tasks.map(t=>({...t,acctId:a.id,acctName:a.name})));
+  const todo=allTasks.filter(t=>t.status==='todo');
+  const inprog=allTasks.filter(t=>t.status==='inprog');
+  const done=allTasks.filter(t=>t.status==='done');
+  const overdue=allTasks.filter(t=>isOverdue(t.due)&&t.status!=='done');
+  const allNotes=accounts.flatMap(a=>a.notes);
+
+  // upcoming events (next 7 days)
+  const today=new Date(); today.setHours(0,0,0,0);
+  const week=new Date(today); week.setDate(week.getDate()+7);
+  const upcoming=events.filter(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    return d>=today && d<=week;
+  }).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+
+  if(!accounts.length){
+    return `<div class="page-header"><h1 class="page-title">Overview</h1><p class="page-subtitle">Your workspace at a glance</p></div>
+    <div class="empty-state">
+      <i class="ti ti-building" aria-hidden="true"></i>
+      <div class="empty-state-title">No accounts yet</div>
+      <div class="empty-state-sub">Add your first account to start tracking tasks and call notes.</div>
+      <button class="btn-primary" style="margin-top:16px;" onclick="openModal()">Add account</button>
+    </div>`;
+  }
+
+  return `
+    <div class="page-header">
+      <h1 class="page-title">Overview</h1>
+      <p class="page-subtitle">${accounts.length} account${accounts.length>1?'s':''} &middot; ${allTasks.length} task${allTasks.length!==1?'s':''} &middot; ${allNotes.length} note${allNotes.length!==1?'s':''}</p>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-chip" style="cursor:default;"><i class="ti ti-circle-dashed"></i>To do <span class="count">${todo.length}</span></div>
+      <div class="filter-chip" style="cursor:default;"><i class="ti ti-progress"></i>In progress <span class="count">${inprog.length}</span></div>
+      <div class="filter-chip" style="cursor:default;"><i class="ti ti-circle-check"></i>Done <span class="count">${done.length}</span></div>
+      ${overdue.length?`<div class="filter-chip" style="cursor:default;color:var(--red-text);background:var(--red-bg);border-color:transparent;"><i class="ti ti-alert-triangle"></i>Overdue <span class="count">${overdue.length}</span></div>`:''}
+    </div>
+
+    ${upcoming.length?`
+    <div style="margin-bottom:28px;">
+      <h2 style="font-size:15px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="ti ti-calendar" style="font-size:16px;color:var(--text-secondary);" aria-hidden="true"></i>Upcoming this week</h2>
+      ${upcoming.slice(0,4).map(e=>renderEventRow(e)).join('')}
+      <div style="margin-top:6px;"><button class="note-action-btn" onclick="goView('schedule')"><i class="ti ti-arrow-right" aria-hidden="true"></i>View full schedule</button></div>
+    </div>` : ''}
+
+    ${overdue.length?`
+    <div style="margin-bottom:28px;">
+      <h2 style="font-size:15px;font-weight:600;margin-bottom:10px;color:var(--red-text);display:flex;align-items:center;gap:8px;"><i class="ti ti-alert-triangle" style="font-size:16px;" aria-hidden="true"></i>Overdue tasks</h2>
+      <div class="task-group-body">
+        ${overdue.slice(0,5).map(t=>renderOverviewTaskRow(t)).join('')}
+      </div>
+    </div>` : ''}
+
+    <div>
+      <h2 style="font-size:15px;font-weight:600;margin-bottom:10px;">Accounts</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
+        ${accounts.map(a=>{
+          const col=acColor(a.id);
+          const open=a.tasks.filter(t=>t.status!=='done').length;
+          const notes=a.notes.length;
+          return `<div style="border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;background:var(--surface);transition:box-shadow .15s;" onmouseover="this.style.boxShadow='var(--shadow)'" onmouseout="this.style.boxShadow='none'" onclick="goView(${a.id})">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;"></span>
+              <span style="font-size:14px;font-weight:600;">${esc(a.name)}</span>
+            </div>
+            ${a.contact?`<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">${esc(a.contact)}</div>`:''}
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${open>0?`<span class="meta-tag"><i class="ti ti-checkbox" aria-hidden="true"></i>${open} open</span>`:`<span class="meta-tag" style="color:var(--text-tertiary);">No open tasks</span>`}
+              ${notes>0?`<span class="meta-tag"><i class="ti ti-notes" aria-hidden="true"></i>${notes} note${notes>1?'s':''}</span>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderOverviewTaskRow(t){
+  const col=acColor(t.acctId);
+  return `<div class="task-row" style="padding-left:6px;" onclick="openDrawer(${t.acctId},${t.id})">
+    <div class="task-checkbox ${t.status==='done'?'checked':''}" onclick="event.stopPropagation();toggleDone(${t.acctId},${t.id})">${t.status==='done'?'<i class="ti ti-check"></i>':''}</div>
+    <div class="task-row-body">
+      <div class="task-row-text">${esc(t.text)}</div>
+      <div class="task-row-meta">
+        <span class="meta-tag" style="color:${col};background:${col}1A;"><i class="ti ti-building" aria-hidden="true"></i>${esc(t.acctName)}</span>
+        ${t.due?`<span class="meta-tag overdue"><i class="ti ti-calendar" aria-hidden="true"></i>${fmtDate(t.due)}</span>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============ STATUS BOARD (cross-account) ============
+let statusFilter='all';
+function renderStatusBoard(){
+  const allTasks=accounts.flatMap(a=>a.tasks.map(t=>({...t,acctId:a.id,acctName:a.name})));
+  const todo=allTasks.filter(t=>t.status==='todo');
+  const inprog=allTasks.filter(t=>t.status==='inprog');
+  const done=allTasks.filter(t=>t.status==='done');
+  const hold=allTasks.filter(t=>t.status==='pending');
+
+  const filters=[
+    {key:'all',label:'All',count:allTasks.length,cls:''},
+    {key:'todo',label:'To do',count:todo.length,cls:'fc-amber'},
+    {key:'inprog',label:'In progress',count:inprog.length,cls:'fc-blue'},
+    {key:'done',label:'Done',count:done.length,cls:'fc-accent'},
+  ];
+  if(hold.length) filters.push({key:'pending',label:'On hold',count:hold.length,cls:'fc-red'});
+
+  let groups=[];
+  if(statusFilter==='all'||statusFilter==='todo') groups.push({key:'todo',tasks:todo,...statusMeta('todo')});
+  if(statusFilter==='all'||statusFilter==='inprog') groups.push({key:'inprog',tasks:inprog,...statusMeta('inprog')});
+  if((statusFilter==='all'&&hold.length)||statusFilter==='pending') groups.push({key:'pending',tasks:hold,...statusMeta('pending')});
+  if(statusFilter==='all'||statusFilter==='done') groups.push({key:'done',tasks:done,...statusMeta('done')});
+
+  if(!accounts.length){
+    return `<div class="page-header"><h1 class="page-title">Status board</h1><p class="page-subtitle">All tasks across every account</p></div>
+    <div class="empty-state">
+      <i class="ti ti-list-check" aria-hidden="true"></i>
+      <div class="empty-state-title">No accounts yet</div>
+      <div class="empty-state-sub">Add an account to start tracking tasks here.</div>
+    </div>`;
+  }
+
+  return `
+    <div class="page-header">
+      <h1 class="page-title">Status board</h1>
+      <p class="page-subtitle">All tasks across every account, grouped by status</p>
+    </div>
+    <div class="filter-row">
+      ${filters.map(f=>`<button class="filter-chip ${f.cls} ${statusFilter===f.key?'active':''}" onclick="setStatusFilter('${f.key}')">${f.label} <span class="count">${f.count}</span></button>`).join('')}
+    </div>
+    ${groups.map(g=>renderStatusGroup(g)).join('')}
+    ${!allTasks.length?`
+    <div class="empty-state">
+      <i class="ti ti-list-check" aria-hidden="true"></i>
+      <div class="empty-state-title">No tasks yet</div>
+      <div class="empty-state-sub">Open an account and add tasks from its Tasks tab.</div>
+    </div>`:''}
+  `;
+}
+
+function setStatusFilter(f){
+  statusFilter=f;
+  renderPage();
+}
+
+function renderStatusGroup(g){
+  const collapsed=collapsedGroups.has('status-'+g.key);
+  return `<div class="task-group">
+    <div class="task-group-hdr ${collapsed?'collapsed':''}" onclick="toggleStatusGroup('${g.key}')">
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+      <span class="tg-dot" style="background:var(--${g.color});"></span>
+      <span class="tg-name">${g.label}</span>
+      <span class="tg-count">${g.tasks.length}</span>
+    </div>
+    <div class="task-group-body ${collapsed?'collapsed':''}">
+      ${g.tasks.length?g.tasks.map(t=>renderOverviewTaskRow(t)).join(''):`<div class="empty-group">No tasks</div>`}
+    </div>
+  </div>`;
+}
+function toggleStatusGroup(key){
+  const k='status-'+key;
+  if(collapsedGroups.has(k)) collapsedGroups.delete(k);
+  else collapsedGroups.add(k);
+  renderPage();
+}
+
+
+function renderSchedule(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const sorted=[...events].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const upcoming=sorted.filter(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    return d>=today;
+  });
+  const past=sorted.filter(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    return d<today;
+  }).reverse();
+
+  // group upcoming by date
+  const groups={};
+  upcoming.forEach(e=>{
+    if(!groups[e.date]) groups[e.date]=[];
+    groups[e.date].push(e);
+  });
+
+  const dateKeys=Object.keys(groups).sort();
+
+  return `
+    <div class="page-header">
+      <h1 class="page-title">Schedule</h1>
+      <p class="page-subtitle">Upcoming calls and meetings</p>
+    </div>
+
+    <div class="new-note-card">
+      <div class="form-grid">
+        <div>
+          <label class="form-field-label">Title</label>
+          <input class="form-input" id="ev-title" placeholder="e.g. Telamon weekly sync" />
+        </div>
+        <div>
+          <label class="form-field-label">Account (optional)</label>
+          <select class="form-input" id="ev-acct">
+            <option value="">No account</option>
+            ${accounts.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="form-field-label">Date</label>
+          <input class="form-input" id="ev-date" type="date" />
+        </div>
+        <div>
+          <label class="form-field-label">Time</label>
+          <input class="form-input" id="ev-time" type="time" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="addEvent()"><i class="ti ti-plus" aria-hidden="true" style="margin-right:4px;"></i>Add to schedule</button>
+      </div>
+    </div>
+
+    ${dateKeys.length?dateKeys.map(dk=>renderScheduleDay(dk,groups[dk])).join(''):`
+    <div class="empty-state">
+      <i class="ti ti-calendar-event" aria-hidden="true"></i>
+      <div class="empty-state-title">Nothing scheduled</div>
+      <div class="empty-state-sub">Add your upcoming calls and meetings above to keep track of them here.</div>
+    </div>`}
+
+    ${past.length?`
+    <div style="margin-top:8px;">
+      <h2 style="font-size:13px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;">Past</h2>
+      ${past.slice(0,10).map(e=>renderEventRow(e,true)).join('')}
+    </div>` : ''}
+  `;
+}
+
+function renderScheduleDay(dateKey,evts){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const d=new Date(dateKey+'T00:00:00');
+  const isToday=d.getTime()===today.getTime();
+  const label=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  evts.sort((a,b)=>a.time.localeCompare(b.time));
+  return `<div class="schedule-day">
+    <div class="schedule-day-label">${label}${isToday?'<span class="badge-today">Today</span>':''}</div>
+    ${evts.map(e=>renderEventRow(e)).join('')}
+  </div>`;
+}
+
+function renderEventRow(e,isPast){
+  const acct=accounts.find(a=>a.id===e.acctId);
+  const col=acct?acColor(acct.id):'var(--text-tertiary)';
+  const timeDisplay = e.time ? formatTime(e.time) : 'All day';
+  return `<div class="event-row" style="${isPast?'opacity:.55;':''}">
+    <div class="event-time">${timeDisplay}${isPast?`<div class="event-time-sub">${new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`:''}</div>
+    <div class="event-color" style="background:${col};"></div>
+    <div class="event-body">
+      <div class="event-title">${esc(e.title)}</div>
+      ${acct?`<div class="event-sub"><span><i class="ti ti-building" aria-hidden="true" style="font-size:13px;"></i> ${esc(acct.name)}</span></div>`:''}
+    </div>
+    <button class="event-del" onclick="deleteEvent(${e.id})" aria-label="Delete event"><i class="ti ti-trash"></i></button>
+  </div>`;
+}
+
+function formatTime(t){
+  const [h,m]=t.split(':').map(Number);
+  const period=h>=12?'PM':'AM';
+  const h12=h%12===0?12:h%12;
+  return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+}
+
+function addEvent(){
+  const title=document.getElementById('ev-title').value.trim();
+  const date=document.getElementById('ev-date').value;
+  if(!title||!date){
+    if(!title) document.getElementById('ev-title').focus();
+    else document.getElementById('ev-date').focus();
+    return;
+  }
+  const acctId=document.getElementById('ev-acct').value;
+  events.push({
+    id:Date.now(),
+    title,
+    date,
+    time:document.getElementById('ev-time').value||'',
+    acctId:acctId?Number(acctId):null
+  });
+  save();
+  ['ev-title','ev-date','ev-time'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ev-acct').value='';
+  renderPage();
+}
+function deleteEvent(id){
+  if(!confirm('Remove this from your schedule?'))return;
+  events=events.filter(e=>e.id!==id);
+  save();
+  renderPage();
+}
+
+// ============ ALL NOTES ============
+function renderAllNotes(){
+  let notes=[];
+  accounts.forEach(a=>{
+    a.notes.forEach(n=>notes.push({...n,acctId:a.id,acctName:a.name}));
+  });
+  notes.sort((a,b)=>b.id-a.id);
+
+  return `
+    <div class="page-header">
+      <h1 class="page-title">All notes</h1>
+      <p class="page-subtitle">${notes.length} call note${notes.length!==1?'s':''} across all accounts</p>
+    </div>
+    ${notes.length?notes.map(n=>renderNotePage(n,n.acctId,true)).join(''):`
+    <div class="empty-state">
+      <i class="ti ti-notes" aria-hidden="true"></i>
+      <div class="empty-state-title">No call notes yet</div>
+      <div class="empty-state-sub">Open an account and add your first call note from the Notes tab.</div>
+    </div>`}
+  `;
+}
+
+// ============ ACCOUNT PAGE ============
+function renderAccountPage(acctId){
+  const a=accounts.find(a=>a.id===acctId);
+  if(!a){ currentView='overview'; return renderOverview(); }
+  const col=acColor(a.id);
+
+  return `
+    <div class="page-header">
+      <div class="page-icon-row">
+        <div class="page-icon" style="background:${col}1A;color:${col};"><i class="ti ti-building"></i></div>
+        <div>
+          <h1 class="page-title">${esc(a.name)}</h1>
+          ${a.contact?`<p class="page-subtitle">${esc(a.contact)}</p>`:''}
+        </div>
+      </div>
+    </div>
+
+    <div class="prop-row">
+      <span class="prop-pill"><i class="ti ti-checkbox" aria-hidden="true"></i>${a.tasks.filter(t=>t.status!=='done').length} open tasks</span>
+      <span class="prop-pill"><i class="ti ti-notes" aria-hidden="true"></i>${a.notes.length} notes</span>
+      <span class="prop-pill" style="cursor:pointer;" onclick="if(confirm('Delete this account and all its data?'))deleteAccount(${a.id})"><i class="ti ti-trash" aria-hidden="true"></i>Delete account</span>
+    </div>
+
+    <div class="seg-tabs">
+      <button class="seg-tab ${a._tab!=='notes'?'active':''}" onclick="setAcctTab(${a.id},'tasks')">Tasks</button>
+      <button class="seg-tab ${a._tab==='notes'?'active':''}" onclick="setAcctTab(${a.id},'notes')">Call notes</button>
+    </div>
+
+    <div id="acct-tab-content">
+      ${a._tab==='notes' ? renderNotesTab(a) : renderTasksTab(a)}
+    </div>
+  `;
+}
+
+function setAcctTab(acctId,tab){
+  const a=accounts.find(a=>a.id===acctId);
+  a._tab=tab;
+  renderPage();
+}
+
+// ---- TASKS TAB ----
+function renderTasksTab(a){
+  const todo=a.tasks.filter(t=>t.status==='todo');
+  const inprog=a.tasks.filter(t=>t.status==='inprog');
+  const done=a.tasks.filter(t=>t.status==='done');
+  const hold=a.tasks.filter(t=>t.status==='pending');
+
+  const filters=[
+    {key:'all',label:'All',count:a.tasks.length,cls:''},
+    {key:'todo',label:'To do',count:todo.length,cls:'fc-amber'},
+    {key:'inprog',label:'In progress',count:inprog.length,cls:'fc-blue'},
+    {key:'done',label:'Done',count:done.length,cls:'fc-accent'},
+  ];
+  if(hold.length) filters.push({key:'pending',label:'On hold',count:hold.length,cls:'fc-red'});
+
+  let groups=[];
+  if(activeTaskFilter==='all'||activeTaskFilter==='todo') groups.push({key:'todo',tasks:todo,...statusMeta('todo')});
+  if(activeTaskFilter==='all'||activeTaskFilter==='inprog') groups.push({key:'inprog',tasks:inprog,...statusMeta('inprog')});
+  if(activeTaskFilter==='all'||activeTaskFilter==='pending') if(hold.length||activeTaskFilter==='pending') groups.push({key:'pending',tasks:hold,...statusMeta('pending')});
+  if(activeTaskFilter==='all'||activeTaskFilter==='done') groups.push({key:'done',tasks:done,...statusMeta('done')});
+
+  return `
+    <div class="quick-add">
+      <i class="ti ti-plus" aria-hidden="true"></i>
+      <input id="qa-text" placeholder="Add a task and press enter..." onkeydown="if(event.key==='Enter')quickAddTask(${a.id})" />
+      <button class="quick-add-btn" onclick="toggleAddTaskDetails()">Details</button>
+    </div>
+
+    <div id="add-task-details" style="display:none;" class="new-note-card">
+      <div class="form-grid">
+        <div>
+          <label class="form-field-label">Status</label>
+          <select class="form-input" id="tk-status">
+            <option value="todo">To do</option>
+            <option value="inprog">In progress</option>
+            <option value="pending">On hold</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-field-label">Priority</label>
+          <select class="form-input" id="tk-priority">
+            <option value="">None</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="form-field-label">Due date</label>
+          <input class="form-input" id="tk-due" type="date" />
+        </div>
+        <div>
+          <label class="form-field-label">Assignee</label>
+          <input class="form-input" id="tk-assignee" list="assignee-options" placeholder="Type or pick a name" />
+          <datalist id="assignee-options"></datalist>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="quickAddTask(${a.id})">Add task</button>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      ${filters.map(f=>`<button class="filter-chip ${f.cls} ${activeTaskFilter===f.key?'active':''}" onclick="setTaskFilter('${f.key}')">${f.label} <span class="count">${f.count}</span></button>`).join('')}
+    </div>
+
+    ${groups.map(g=>renderTaskGroup(g,a.id)).join('')}
+
+    ${!a.tasks.length?`
+    <div class="empty-state">
+      <i class="ti ti-checkbox" aria-hidden="true"></i>
+      <div class="empty-state-title">No tasks yet</div>
+      <div class="empty-state-sub">Add your first task using the input above.</div>
+    </div>`:''}
+  `;
+}
+
+function renderTaskGroup(g,acctId){
+  const collapsed=collapsedGroups.has(acctId+'-'+g.key);
+  return `<div class="task-group">
+    <div class="task-group-hdr ${collapsed?'collapsed':''}" onclick="toggleGroup(${acctId},'${g.key}')">
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+      <span class="tg-dot" style="background:var(--${g.color});"></span>
+      <span class="tg-name">${g.label}</span>
+      <span class="tg-count">${g.tasks.length}</span>
+    </div>
+    <div class="task-group-body ${collapsed?'collapsed':''}">
+      ${g.tasks.length?g.tasks.map(t=>renderTaskRow(t,acctId)).join(''):`<div class="empty-group">No tasks</div>`}
+    </div>
+  </div>`;
+}
+
+function toggleGroup(acctId,key){
+  const k=acctId+'-'+key;
+  if(collapsedGroups.has(k)) collapsedGroups.delete(k);
+  else collapsedGroups.add(k);
+  renderPage();
+}
+
+function renderTaskRow(t,acctId){
+  const ov=isOverdue(t.due)&&t.status!=='done';
+  const canFwd=t.status!=='done'&&t.status!=='pending';
+  const canBack=t.status==='inprog'||t.status==='done';
+  return `<div class="task-row" onclick="openDrawer(${acctId},${t.id})">
+    <div class="task-checkbox ${t.status==='done'?'checked':''}" onclick="event.stopPropagation();toggleDone(${acctId},${t.id})">${t.status==='done'?'<i class="ti ti-check"></i>':''}</div>
+    <div class="task-row-body">
+      <div class="task-row-text ${t.status==='done'?'done':''}">${esc(t.text)}</div>
+      <div class="task-row-meta">
+        ${t.due?`<span class="meta-tag ${ov?'overdue':''}"><i class="ti ti-calendar" aria-hidden="true"></i>${fmtDate(t.due)}</span>`:''}
+        ${t.assignee?`<span class="meta-tag"><i class="ti ti-user" aria-hidden="true"></i>${esc(t.assignee)}</span>`:''}
+        ${t.priority?`<span class="meta-tag priority-${t.priority}"><i class="ti ti-flag" aria-hidden="true"></i>${t.priority.charAt(0).toUpperCase()+t.priority.slice(1)}</span>`:''}
+      </div>
+    </div>
+    <div class="task-row-actions" onclick="event.stopPropagation()">
+      ${canBack?`<button class="row-action-btn" onclick="moveTask(${acctId},${t.id},'b')" aria-label="Move back"><i class="ti ti-arrow-left"></i></button>`:''}
+      ${canFwd?`<button class="row-action-btn" onclick="moveTask(${acctId},${t.id},'f')" aria-label="Move forward"><i class="ti ti-arrow-right"></i></button>`:''}
+      <button class="row-action-btn danger" onclick="deleteTask(${acctId},${t.id})" aria-label="Delete"><i class="ti ti-trash"></i></button>
+    </div>
+  </div>`;
+}
+
+function setTaskFilter(f){
+  activeTaskFilter=f;
+  renderPage();
+}
+
+function toggleAddTaskDetails(){
+  const el=document.getElementById('add-task-details');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+function quickAddTask(acctId){
+  const inp=document.getElementById('qa-text');
+  const text=inp.value.trim();
+  if(!text)return;
+  const a=accounts.find(a=>a.id===acctId);
+  const detailsOpen=document.getElementById('add-task-details').style.display==='block';
+  a.tasks.unshift({
+    id:Date.now(),
+    text,
+    status:detailsOpen?document.getElementById('tk-status').value:'todo',
+    priority:detailsOpen?document.getElementById('tk-priority').value:'',
+    due:detailsOpen?document.getElementById('tk-due').value:'',
+    assignee:detailsOpen?document.getElementById('tk-assignee').value.trim():''
+  });
+  save();
+  inp.value='';
+  if(detailsOpen){
+    document.getElementById('tk-status').value='todo';
+    document.getElementById('tk-priority').value='';
+    document.getElementById('tk-due').value='';
+    document.getElementById('tk-assignee').value='';
+  }
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+}
+
+function populateAssigneeOptions(){
+  const dl=document.getElementById('assignee-options');
+  if(!dl)return;
+  const defaults=['Me','Vivek','Kannan','Dev team','Customer'];
+  const used=new Set(defaults);
+  accounts.forEach(a=>a.tasks.forEach(t=>{ if(t.assignee) used.add(t.assignee); }));
+  dl.innerHTML=[...used].map(v=>`<option value="${esc(v)}"></option>`).join('');
+}
+
+function toggleDone(acctId,taskId){
+  const a=accounts.find(a=>a.id===acctId);
+  const t=a.tasks.find(t=>t.id===taskId);
+  t.status = t.status==='done' ? 'todo' : 'done';
+  save();
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+}
+
+function moveTask(acctId,taskId,dir){
+  const a=accounts.find(a=>a.id===acctId);
+  const t=a.tasks.find(t=>t.id===taskId);
+  const flow=['todo','inprog','done'];
+  const i=flow.indexOf(t.status);
+  if(dir==='f'){
+    if(t.status==='pending') t.status='inprog';
+    else if(i<2) t.status=flow[i+1];
+  } else {
+    if(i>0) t.status=flow[i-1];
+  }
+  save();
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+  if(drawerTask===taskId) openDrawer(acctId,taskId);
+}
+
+function setPending(acctId,taskId){
+  const a=accounts.find(a=>a.id===acctId);
+  const t=a.tasks.find(t=>t.id===taskId);
+  t.status = t.status==='pending' ? 'todo' : 'pending';
+  save();
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+  if(drawerTask===taskId) openDrawer(acctId,taskId);
+}
+
+function deleteTask(acctId,taskId){
+  if(!confirm('Delete this task? This cannot be undone.'))return;
+  const a=accounts.find(a=>a.id===acctId);
+  a.tasks=a.tasks.filter(t=>t.id!==taskId);
+  save();
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+}
+
+// ---- TASK DRAWER ----
+function openDrawer(acctId,taskId){
+  const a=accounts.find(a=>a.id===acctId);
+  const t=a?.tasks.find(t=>t.id===taskId);
+  if(!a||!t)return;
+  drawerAcct=acctId; drawerTask=taskId;
+  const col=acColor(acctId);
+  const ov=isOverdue(t.due)&&t.status!=='done';
+  const sm=statusMeta(t.status);
+  const priLabel={high:'High',medium:'Medium',low:'Low'}[t.priority]||'None';
+
+  document.getElementById('dr-title').textContent=t.text;
+  document.getElementById('dr-props').innerHTML=`
+    <div class="drawer-prop">
+      <div class="drawer-prop-label"><i class="ti ${sm.icon}" aria-hidden="true"></i>Status</div>
+      <div class="drawer-prop-value" style="color:var(--${sm.color}-text);">${sm.label}</div>
+    </div>
+    <div class="drawer-prop">
+      <div class="drawer-prop-label"><i class="ti ti-building" aria-hidden="true"></i>Account</div>
+      <div class="drawer-prop-value"><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:50%;background:${col};display:inline-block;"></span>${esc(a.name)}</span></div>
+    </div>
+    <div class="drawer-prop">
+      <div class="drawer-prop-label"><i class="ti ti-calendar" aria-hidden="true"></i>Due date</div>
+      <div class="drawer-prop-value" style="${ov?'color:var(--red-text);':''}">${t.due?fmtDate(t.due):'Not set'}</div>
+    </div>
+    <div class="drawer-prop">
+      <div class="drawer-prop-label"><i class="ti ti-user" aria-hidden="true"></i>Assignee</div>
+      <div class="drawer-prop-value">${t.assignee?esc(t.assignee):'Unassigned'}</div>
+    </div>
+    <div class="drawer-prop">
+      <div class="drawer-prop-label"><i class="ti ti-flag" aria-hidden="true"></i>Priority</div>
+      <div class="drawer-prop-value">${priLabel}</div>
+    </div>
+    <div class="drawer-prop" style="border-bottom:none;">
+      <div class="drawer-prop-label"><i class="ti ti-clock" aria-hidden="true"></i>Created</div>
+      <div class="drawer-prop-value" style="font-weight:400;color:var(--text-secondary);">${new Date(t.id).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+    </div>
+  `;
+
+  const canFwd=t.status!=='done'&&t.status!=='pending';
+  const canBack=t.status==='inprog'||t.status==='done';
+  const nextLabel={todo:'Move to in progress',inprog:'Mark done'}[t.status]||'';
+  const prevLabel={inprog:'Move back to to do',done:'Move back to in progress'}[t.status]||'';
+
+  document.getElementById('dr-actions').innerHTML=`
+    ${canBack?`<button class="dbtn blue" onclick="drawerMove('b')"><i class="ti ti-arrow-left" aria-hidden="true" style="margin-right:4px;"></i>${prevLabel}</button>`:''}
+    ${canFwd?`<button class="dbtn accent" onclick="drawerMove('f')"><i class="ti ti-arrow-right" aria-hidden="true" style="margin-right:4px;"></i>${nextLabel}</button>`:''}
+    ${t.status!=='done'?`<button class="dbtn" onclick="drawerHold()">${t.status==='pending'?'Remove hold':'Put on hold'}</button>`:''}
+    <button class="dbtn danger" onclick="drawerDelete()"><i class="ti ti-trash" aria-hidden="true" style="margin-right:4px;"></i>Delete task</button>
+  `;
+
+  document.getElementById('dov').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer(){
+  document.getElementById('dov').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  drawerAcct=null; drawerTask=null;
+}
+function drawerMove(d){moveTask(drawerAcct,drawerTask,d);}
+function drawerHold(){setPending(drawerAcct,drawerTask);}
+function drawerDelete(){
+  if(!confirm('Delete this task?'))return;
+  deleteTask(drawerAcct,drawerTask);
+  closeDrawer();
+}
+
+// ---- NOTES TAB ----
+function renderNotesTab(a){
+  return `
+    <div class="new-note-card">
+      <div class="form-grid">
+        <div>
+          <label class="form-field-label">Call title</label>
+          <input class="form-input" id="nt-title" placeholder="e.g. Weekly check-in" />
+        </div>
+        <div>
+          <label class="form-field-label">Subject / agenda</label>
+          <input class="form-input" id="nt-subject" placeholder="e.g. Form builder updates" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="form-field-label">Date</label>
+          <input class="form-input" id="nt-date" type="date" />
+        </div>
+        <div>
+          <label class="form-field-label">Attendees</label>
+          <input class="form-input" id="nt-attendees" placeholder="e.g. Vivek, Graham" />
+        </div>
+      </div>
+      <label class="form-field-label">Notes</label>
+      <textarea class="form-input" id="nt-body" placeholder="Type or paste your call notes here..."></textarea>
+      <div class="form-actions">
+        <button class="btn-primary" id="nt-save-btn" onclick="saveNote(${a.id})">Save note</button>
+      </div>
+    </div>
+    ${a.notes.length?a.notes.map(n=>renderNotePage(n,a.id,false)).join(''):`
+    <div class="empty-state">
+      <i class="ti ti-notes" aria-hidden="true"></i>
+      <div class="empty-state-title">No call notes yet</div>
+      <div class="empty-state-sub">Add your first call note using the form above.</div>
+    </div>`}
+  `;
+}
+
+function renderNotePage(n,acctId,showAccountTag){
+  const a=accounts.find(a=>a.id===acctId);
+  const col=acColor(acctId);
+  return `
+  <div class="note-page">
+    <div class="note-page-hdr">
+      <div class="note-page-top">
+        <div class="note-page-icon"><i class="ti ti-phone-call"></i></div>
+        <div class="note-page-titles">
+          <div class="note-page-title">${esc(n.title)}</div>
+          ${n.sub?`<div class="note-page-subject">${esc(n.sub)}</div>`:''}
+        </div>
+        <button class="note-page-del" onclick="deleteNote(${acctId},${n.id})" aria-label="Delete note"><i class="ti ti-trash"></i></button>
+      </div>
+      <div class="note-page-meta">
+        ${showAccountTag&&a?`<span class="meta-tag" style="color:${col};background:${col}1A;"><i class="ti ti-building" aria-hidden="true"></i>${esc(a.name)}</span>`:''}
+        ${n.date?`<span class="meta-tag"><i class="ti ti-calendar" aria-hidden="true"></i>${esc(n.date)}</span>`:''}
+        ${n.att?`<span class="meta-tag"><i class="ti ti-users" aria-hidden="true"></i>${esc(n.att)}</span>`:''}
+      </div>
+    </div>
+    <div class="note-divider"></div>
+    <div class="note-page-body">
+      ${n.sum?`<div class="note-summary">
+        <div class="note-summary-label"><i class="ti ti-sparkles" aria-hidden="true"></i>AI summary</div>
+        <div class="note-summary-text">${esc(n.sum)}</div>
+      </div>`:''}
+      ${n.showRaw?`<div class="note-raw"><div class="note-raw-label">Original notes</div><div class="note-raw-text">${esc(n.body)}</div></div>`:''}
+      <div class="note-actions">
+        <button class="note-action-btn ai" onclick="summarizeNote(${acctId},${n.id})"><i class="ti ti-sparkles" aria-hidden="true"></i>${n.sum?'Re-summarize':'Summarize'} with AI</button>
+        <button class="note-action-btn" onclick="toggleRaw(${acctId},${n.id})"><i class="ti ${n.showRaw?'ti-eye-off':'ti-eye'}" aria-hidden="true"></i>${n.showRaw?'Hide':'Show'} original notes</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function saveNote(acctId){
+  const bodyEl=document.getElementById('nt-body');
+  const body=bodyEl.value.trim();
+  if(!body){
+    bodyEl.focus();
+    bodyEl.style.borderColor='var(--red)';
+    setTimeout(()=>bodyEl.style.borderColor='',1000);
+    return;
+  }
+  const sub=document.getElementById('nt-subject').value.trim();
+  const att=document.getElementById('nt-attendees').value.trim();
+  const title=document.getElementById('nt-title').value.trim()||'Untitled call';
+  const cd=document.getElementById('nt-date').value;
+  const dateStr = cd ? new Date(cd+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  const a=accounts.find(a=>a.id===acctId);
+  a.notes.unshift({id:Date.now(),title,sub,att,date:dateStr,body,sum:'',showRaw:false});
+  save();
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+}
+
+function deleteNote(acctId,noteId){
+  if(!confirm('Delete this call note? This cannot be undone.'))return;
+  const a=accounts.find(a=>a.id===acctId);
+  a.notes=a.notes.filter(n=>n.id!==noteId);
+  save();
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+}
+
+function toggleRaw(acctId,noteId){
+  const a=accounts.find(a=>a.id===acctId);
+  const n=a.notes.find(n=>n.id===noteId);
+  n.showRaw=!n.showRaw;
+  renderPage();
+}
+
+function summarizeNote(acctId,noteId){
+  const a=accounts.find(a=>a.id===acctId);
+  const n=a.notes.find(n=>n.id===noteId);
+  n.sum=localSummarize(n.body,n.sub,n.att);
+  save();
+  renderPage();
+}
+
+function localSummarize(body,sub,att){
+  const lines=body.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  let sentences=[];
+  lines.forEach(l=>{
+    l.split(/(?<=[.!?])\s+/).forEach(s=>{ if(s.trim()) sentences.push(s.trim()); });
+  });
+  if(!sentences.length) sentences=[body.trim()];
+
+  const actionWords=/\b(will|need to|needs to|should|must|to do|todo|action|follow up|follow-up|let's|lets|plan to|going to|next step|next steps|assign|ship|send|review|check|fix|update|build|create|schedule|confirm)\b/i;
+  const actions=[];
+  const points=[];
+  sentences.forEach(s=>{
+    if(actionWords.test(s)) actions.push(s);
+    else points.push(s);
+  });
+
+  let keyPoints=points.length?points:sentences;
+  keyPoints=[...keyPoints].sort((a,b)=>b.length-a.length).slice(0,4);
+  keyPoints=sentences.filter(s=>keyPoints.includes(s)).slice(0,4);
+  if(!keyPoints.length) keyPoints=sentences.slice(0,3);
+
+  let out='';
+  if(sub) out+='Subject: '+sub+'\n';
+  if(att) out+='Attendees: '+att+'\n';
+  if(sub||att) out+='\n';
+
+  out+='Key points:\n';
+  keyPoints.forEach(p=>{ out+='\u2022 '+p+'\n'; });
+
+  if(actions.length){
+    out+='\nAction items:\n';
+    actions.slice(0,6).forEach(a=>{ out+='\u2022 '+a+'\n'; });
+  }
+
+  return out.trim();
+}
+
+
+// ============ MIGRATION FROM OLD VERSION ============
+(function migrate(){
+  try{
+    if(accounts.length) return;
+    const old = JSON.parse(localStorage.getItem('board-v9') || 'null');
+    if(old && old.length){
+      accounts = old.map(a => ({
+        id: a.id,
+        name: a.name,
+        contact: a.contact || '',
+        tasks: (a.tasks||[]).map(t => ({
+          id: t.id, text: t.text, status: t.status,
+          priority: t.priority || '', due: t.due || '', assignee: t.assignee || ''
+        })),
+        notes: (a.notes||[]).map(n => ({
+          id: n.id, title: n.title, sub: n.sub||'', att: n.att||'',
+          date: n.date, body: n.body, sum: n.sum||'', showRaw: !!n.showRaw
+        })),
+        _tab: 'tasks'
+      }));
+      save();
+    }
+  }catch(e){ console.error('migration failed', e); }
+})();
+
+// ============ INIT ============
+try{
+  applyTheme();
+  renderSidebar();
+  renderMobileNav();
+  renderPage();
+}catch(err){
+  const pageEl=document.getElementById('page');
+  if(pageEl){
+    pageEl.innerHTML = `<div style="padding:24px;font-family:monospace;font-size:13px;color:#C03333;white-space:pre-wrap;">Something went wrong loading the app.\n\n${(err&&err.message)||err}\n\n${(err&&err.stack)||''}</div>`;
+  }
+  console.error(err);
+}
+
+</script>
+</body>
+</html>
