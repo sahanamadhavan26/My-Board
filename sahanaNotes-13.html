@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="My Board">
+<title>My Board</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+[data-theme="dark"]{
+  --bg:#0F1117;--surface:#1A1D27;--surface2:#22263A;--surface3:#2A2F45;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F0F0F0;--text2:#A0A8B8;--muted:#6B7280;
+  --accent:#1D9E75;--accent-l:rgba(29,158,117,0.18);
+  --blue:#4A9EE8;--blue-l:rgba(74,158,232,0.15);
+  --amber:#F5A623;--amber-l:rgba(245,166,35,0.15);
+  --red:#E24B4A;--red-l:rgba(226,75,74,0.15);
+  --sum-bg:rgba(29,158,117,0.1);--sum-bd:rgba(29,158,117,0.25);--sum-t:#5DCAA5;
+}
+[data-theme="light"]{
+  --bg:#F2F0EB;--surface:#FFFFFF;--surface2:#F7F5F0;--surface3:#EDEAE3;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);
+  --text:#1A1A1A;--text2:#555;--muted:#999;
+  --accent:#1D9E75;--accent-l:rgba(29,158,117,0.1);
+  --blue:#1A6FD4;--blue-l:rgba(26,111,212,0.1);
+  --amber:#B87800;--amber-l:rgba(184,120,0,0.1);
+  --red:#C0392B;--red-l:rgba(192,57,43,0.1);
+  --sum-bg:rgba(29,158,117,0.07);--sum-bd:rgba(29,158,117,0.18);--sum-t:#0F6E56;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;min-height:100vh;transition:background .25s,color .25s;}
+
+/* HEADER */
+.hdr{background:var(--surface);border-bottom:.5px solid var(--border);padding:14px 16px;position:sticky;top:0;z-index:30;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.hdr h1{font-size:19px;font-weight:700;}
+.hdr-date{font-size:12px;color:var(--muted);margin-top:2px;}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.theme-btn{background:var(--surface2);border:.5px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--text2);font-family:inherit;}
+.add-btn{background:var(--accent);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+
+/* MOBILE CHIPS */
+.mob-bar{background:var(--surface2);border-bottom:.5px solid var(--border);padding:10px 16px;display:none;}
+.mob-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;padding:7px 15px;font-size:13px;font-weight:500;border-radius:20px;border:.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.chip .cdot{width:8px;height:8px;border-radius:50%;background:var(--ac,#1D9E75);flex-shrink:0;}
+.chip.active{color:var(--ac,var(--accent));border-color:var(--ac,var(--accent));}
+.chip.add{border-style:dashed;}
+
+/* STATS - clickable */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 16px;}
+.stat{background:var(--surface);border-radius:10px;padding:12px;border:.5px solid var(--border);text-align:center;cursor:pointer;transition:all .15s;}
+.stat:hover{border-color:var(--border2);}
+.stat.active-filter{border-width:2px;}
+.stat-n{font-size:22px;font-weight:700;}
+.stat-l{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 145px);}
+.sidebar{background:var(--surface);border-right:.5px solid var(--border);padding:12px;overflow-y:auto;}
+.sb-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 4px 8px;}
+.search{width:100%;background:var(--surface2);border:.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;margin-bottom:10px;}
+.search:focus{outline:none;border-color:var(--accent);}
+.search::placeholder{color:var(--muted);}
+.acct-item{padding:10px;border-radius:9px;cursor:pointer;margin-bottom:4px;border:.5px solid transparent;transition:all .15s;display:flex;align-items:center;gap:10px;}
+.acct-item:hover{background:var(--surface2);}
+.acct-item.active{border-color:var(--ac,var(--accent));}
+.acct-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.acct-info{flex:1;min-width:0;}
+.acct-name{font-size:13px;font-weight:500;}
+.acct-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.acct-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+.stag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;}
+.add-acct-btn{width:100%;margin-top:10px;padding:9px;font-size:13px;font-weight:500;background:var(--accent-l);color:var(--accent);border:.5px solid var(--accent);border-radius:8px;cursor:pointer;font-family:inherit;}
+
+/* DETAIL */
+.detail{padding:20px;overflow-y:auto;}
+.empty-st{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;color:var(--muted);font-size:14px;gap:12px;text-align:center;}
+.det-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:10px;}
+.det-name{font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px;}
+.det-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.det-contact{font-size:12px;color:var(--muted);margin-top:3px;}
+.del-btn{background:none;border:.5px solid var(--red-l);color:var(--red);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;flex-shrink:0;}
+.tab-row{display:flex;gap:4px;margin-bottom:18px;background:var(--surface2);border-radius:10px;padding:4px;}
+.dtab{flex:1;padding:8px;font-size:13px;font-weight:500;border:none;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;}
+.dtab.active{background:var(--surface);color:var(--text);}
+.dsec{display:none;}.dsec.active{display:block;}
+
+/* ADD TASK FORM */
+.add-card{background:var(--surface);border-radius:14px;border:.5px solid var(--border);padding:16px;margin-bottom:20px;}
+.add-card-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;}
+.f{width:100%;background:var(--surface2);border:.5px solid var(--border);border-radius:9px;padding:11px 13px;font-size:14px;color:var(--text);font-family:inherit;margin-bottom:10px;}
+.f::placeholder{color:var(--muted);}
+.f:focus{outline:none;border-color:var(--accent);background:var(--surface);}
+select.f{-webkit-appearance:none;}
+textarea.f{resize:none;line-height:1.5;}
+.fl{font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.add-btn2{width:100%;padding:13px;font-size:14px;font-weight:600;background:var(--accent);color:white;border:none;border-radius:9px;cursor:pointer;font-family:inherit;margin-top:4px;}
+.add-btn2:disabled{opacity:.5;}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.fb{padding:7px 14px;font-size:12px;font-weight:600;border-radius:20px;border:.5px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px;}
+.fb:hover{border-color:var(--border2);}
+.fb.active{color:white;border-color:transparent;}
+.fb.f-all.active{background:var(--surface3);color:var(--text);}
+.fb.f-todo.active{background:var(--amber);border-color:var(--amber);}
+.fb.f-inprog.active{background:var(--blue);border-color:var(--blue);}
+.fb.f-done.active{background:var(--accent);border-color:var(--accent);}
+.fb.f-hold.active{background:var(--red);border-color:var(--red);}
+.fb-count{font-size:11px;font-weight:700;padding:1px 6px;border-radius:20px;background:rgba(255,255,255,0.2);}
+
+/* KANBAN COLS */
+.kb-wrap{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+.k-col{background:var(--surface);border-radius:14px;border:.5px solid var(--border);overflow:hidden;}
+.k-col-hdr{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s;}
+.k-col-hdr:hover{background:var(--surface2);}
+.k-col-left{display:flex;align-items:center;gap:9px;}
+.k-dot{width:10px;height:10px;border-radius:50%;}
+.k-title{font-size:14px;font-weight:600;}
+.k-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;}
+.k-expand{font-size:12px;color:var(--muted);margin-left:4px;}
+.k-divider{height:.5px;background:var(--border);}
+.k-cards{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+.k-empty{padding:18px;text-align:center;font-size:13px;color:var(--muted);opacity:.5;}
+
+.c-todo{border-left:3px solid var(--amber);}
+.c-todo .k-dot{background:var(--amber);}
+.c-todo .k-title{color:var(--amber);}
+.c-todo .k-badge{background:var(--amber-l);color:var(--amber);}
+.c-inprog{border-left:3px solid var(--blue);}
+.c-inprog .k-dot{background:var(--blue);}
+.c-inprog .k-title{color:var(--blue);}
+.c-inprog .k-badge{background:var(--blue-l);color:var(--blue);}
+.c-done{border-left:3px solid var(--accent);}
+.c-done .k-dot{background:var(--accent);}
+.c-done .k-title{color:var(--accent);}
+.c-done .k-badge{background:var(--accent-l);color:var(--accent);}
+.c-hold{border-left:3px solid var(--red);}
+.c-hold .k-dot{background:var(--red);}
+.c-hold .k-title{color:var(--red);}
+.c-hold .k-badge{background:var(--red-l);color:var(--red);}
+
+/* TASK CARD */
+.task-card{background:var(--surface2);border-radius:10px;border:.5px solid var(--border);padding:13px 14px;cursor:pointer;transition:all .15s;}
+.task-card:hover{border-color:var(--border2);background:var(--surface3);}
+.tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.tc-text{font-size:14px;color:var(--text);line-height:1.4;flex:1;}
+.tc-text.done{text-decoration:line-through;color:var(--muted);}
+.tc-pri{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0;}
+.ph{background:var(--red-l);color:var(--red);}
+.pm{background:var(--amber-l);color:var(--amber);}
+.pl{background:var(--accent-l);color:var(--accent);}
+.tc-meta{display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:wrap;}
+.tc-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.tc-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);}
+.tb-delete{background:var(--red-l);color:var(--red);border:.5px solid var(--red);border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.tb-delete:hover{background:var(--red);color:#fff;}
+.tc-pill{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text2);background:var(--surface);padding:3px 8px;border-radius:20px;}
+.tc-pill.ov{color:var(--red);background:var(--red-l);}
+.tc-btns{display:flex;gap:5px;}
+.tb{background:var(--surface);border:.5px solid var(--border2);border-radius:7px;padding:5px 9px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;}
+.tb.tf:hover{color:var(--accent);border-color:var(--accent);}
+.tb.tb2:hover{color:var(--blue);border-color:var(--blue);}
+.tb.tx:hover{color:var(--red);border-color:var(--red);}
+
+/* COMPLETED SECTION */
+.completed-section{margin-top:8px;}
+.completed-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface);border-radius:14px;cursor:pointer;border:.5px solid var(--border);margin-bottom:0;transition:all .15s;}
+.completed-hdr:hover{background:var(--surface2);}
+.completed-hdr-left{display:flex;align-items:center;gap:9px;}
+.completed-hdr h3{font-size:14px;font-weight:600;color:var(--accent);}
+.completed-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--accent-l);color:var(--accent);}
+.completed-chevron{font-size:12px;color:var(--muted);transition:transform .2s;}
+.completed-chevron.open{transform:rotate(180deg);}
+.completed-body{background:var(--surface);border:.5px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+.done-card{background:var(--surface2);border-radius:10px;border:.5px solid var(--border);padding:12px 14px;opacity:.7;cursor:pointer;transition:all .15s;}
+.done-card:hover{opacity:1;border-color:var(--border2);}
+.done-card-text{font-size:13px;color:var(--muted);text-decoration:line-through;margin-bottom:7px;}
+.done-card-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.done-pills{display:flex;gap:5px;flex-wrap:wrap;}
+.done-check{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-l);padding:2px 8px;border-radius:20px;}
+
+/* TASK DRAWER */
+.dov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:40;}
+.dov.open{display:block;}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-radius:18px 18px 0 0;border-top:.5px solid var(--border);z-index:41;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);}
+.drawer.open{transform:translateY(0);}
+.dr-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:14px auto 0;}
+.dr-inner{padding:16px 20px 34px;}
+.dr-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:10px;}
+.dr-title{font-size:18px;font-weight:700;line-height:1.3;flex:1;}
+.dr-close{background:var(--surface2);border:.5px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--muted);flex-shrink:0;}
+.dr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.dg{background:var(--surface2);border-radius:10px;padding:12px 14px;}
+.dg-l{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.dg-v{font-size:14px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px;}
+.dg-v.amber{color:var(--amber);}
+.dg-v.blue{color:var(--blue);}
+.dg-v.green{color:var(--accent);}
+.dg-v.red{color:var(--red);}
+.dg-v.ov{color:var(--red);}
+.dr-acts{display:flex;gap:8px;flex-wrap:wrap;}
+.da{flex:1;min-width:100px;padding:11px;font-size:13px;font-weight:500;border:.5px solid var(--border2);border-radius:9px;cursor:pointer;font-family:inherit;background:var(--surface2);color:var(--text2);transition:all .15s;}
+.da.fwd{background:var(--accent-l);color:var(--accent);border-color:var(--accent);}
+.da.bck{background:var(--blue-l);color:var(--blue);border-color:var(--blue);}
+.da.del{background:var(--red-l);color:var(--red);border-color:var(--red);}
+
+/* NOTES */
+.note-card{background:var(--surface);border-radius:14px;border:.5px solid var(--border);margin-bottom:12px;overflow:hidden;}
+.nc-hdr{padding:14px 16px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.nc-title{font-size:15px;font-weight:600;}
+.nc-subject{font-size:12px;color:var(--muted);margin-top:3px;}
+.nc-meta{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.nc-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);background:var(--surface2);padding:4px 10px;border-radius:20px;}
+.nc-del{background:var(--red-l);color:var(--red);border:.5px solid var(--red);cursor:pointer;font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;flex-shrink:0;font-family:inherit;}
+.nc-del:hover{background:var(--red);color:#fff;}
+.nc-body{padding:14px 16px;}
+.sum-box{background:var(--sum-bg);border:.5px solid var(--sum-bd);border-radius:10px;padding:13px 15px;margin-bottom:12px;}
+.sum-lbl{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.sum-text{font-size:13px;color:var(--sum-t);line-height:1.7;white-space:pre-wrap;}
+.tog-raw{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;}
+.raw-box{background:var(--surface2);border-radius:8px;padding:12px;margin-top:10px;}
+.raw-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px;}
+.raw-text{font-size:12px;color:var(--muted);line-height:1.65;white-space:pre-wrap;}
+
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50;align-items:center;justify-content:center;padding:20px;}
+.modal-ov.open{display:flex;}
+.modal{background:var(--surface);border-radius:14px;border:.5px solid var(--border);padding:22px;width:100%;max-width:420px;}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:14px;}
+.mf{width:100%;background:var(--surface2);border:.5px solid var(--border);border-radius:9px;padding:11px 13px;font-size:14px;color:var(--text);font-family:inherit;margin-bottom:10px;}
+.mf:focus{outline:none;border-color:var(--accent);}
+.mf::placeholder{color:var(--muted);}
+.mbtns{display:flex;gap:8px;margin-top:4px;}
+.mbtn{flex:1;padding:11px;font-size:14px;font-weight:500;border-radius:9px;cursor:pointer;font-family:inherit;border:none;}
+.mbtn.c{background:var(--surface2);color:var(--muted);}
+.mbtn.s{background:var(--accent);color:white;}
+
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
+.dot{width:5px;height:5px;border-radius:50%;background:white;animation:bounce 1.2s infinite;display:inline-block;}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+
+@media(max-width:640px){
+  .main{grid-template-columns:1fr}.sidebar{display:none}.mob-bar{display:block}
+  .stats{grid-template-columns:repeat(3,1fr)}.r2,.r3{grid-template-columns:1fr}
+  .detail{padding:14px}.dr-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div><h1>My Board</h1><div class="hdr-date" id="hdate"></div></div>
+    <div class="hdr-right">
+      <button class="theme-btn" id="tbtn" onclick="toggleTheme()">☀️ Light</button>
+      <button class="add-btn" onclick="openModal()">+ Account</button>
+    </div>
+  </div>
+</div>
+
+<div class="mob-bar">
+  <div class="mob-lbl">Switch account</div>
+  <div class="chips" id="chips"></div>
+</div>
+
+<div class="stats">
+  <div class="stat" id="stat-all" onclick="setGlobalFilter('all')">
+    <div class="stat-n" id="sa">0</div><div class="stat-l">All tasks</div>
+  </div>
+  <div class="stat" id="stat-todo" onclick="setGlobalFilter('todo')">
+    <div class="stat-n" style="color:var(--amber)" id="st">0</div><div class="stat-l">To do</div>
+  </div>
+  <div class="stat" id="stat-inprog" onclick="setGlobalFilter('inprog')">
+    <div class="stat-n" style="color:var(--blue)" id="sp">0</div><div class="stat-l">In progress</div>
+  </div>
+  <div class="stat" id="stat-done" onclick="setGlobalFilter('done')">
+    <div class="stat-n" style="color:var(--accent)" id="sd">0</div><div class="stat-l">Done</div>
+  </div>
+  <div class="stat" id="stat-notes" onclick="setGlobalFilter('notes')">
+    <div class="stat-n" style="color:#9B8FE8" id="sn">0</div><div class="stat-l">Call Notes</div>
+  </div>
+</div>
+
+<!-- GLOBAL FILTER VIEW -->
+<div id="global-view" style="display:none;padding:16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <h2 id="gv-title" style="font-size:16px;font-weight:600;"></h2>
+    <button onclick="setGlobalFilter('none')" style="background:var(--surface2);border:.5px solid var(--border2);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;">✕ Close</button>
+  </div>
+  <div id="gv-notes-filters" style="display:none;"></div>
+  <div id="gv-list"></div>
+</div>
+
+<div class="main" id="main-layout">
+  <div class="sidebar">
+    <input class="search" id="search" placeholder="Search accounts..." oninput="renderSB()" />
+    <p class="sb-lbl">Accounts</p>
+    <div id="acct-list"></div>
+    <button class="add-acct-btn" onclick="openModal()">+ Add account</button>
+  </div>
+  <div class="detail" id="detail">
+    <div class="empty-st"><span style="font-size:44px;opacity:.15;">🏢</span><span>Select or add an account to get started</span><button class="add-acct-btn" style="width:auto;padding:8px 20px;" onclick="openModal()">+ Add account</button></div>
+  </div>
+</div>
+
+<!-- TASK DRAWER -->
+<div class="dov" id="dov" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="dr-handle"></div>
+  <div class="dr-inner">
+    <div class="dr-hdr">
+      <div class="dr-title" id="dr-title"></div>
+      <button class="dr-close" onclick="closeDrawer()">×</button>
+    </div>
+    <div class="dr-grid" id="dr-grid"></div>
+    <div class="dr-acts" id="dr-acts"></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="modal">
+  <div class="modal">
+    <h3>Add account</h3>
+    <input class="mf" id="a-name" placeholder="Company name (e.g. Telamon)" />
+    <input class="mf" id="a-contact" placeholder="Contact name (optional)" />
+    <div class="mbtns">
+      <button class="mbtn c" onclick="closeModal()">Cancel</button>
+      <button class="mbtn s" onclick="saveAccount()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS=['#7C3AED','#1D9E75','#2563EB','#D97706','#DB2777','#0891B2','#65A30D','#EA580C'];
+let accounts=JSON.parse(localStorage.getItem('board-v9')||'[]');
+// migration: backfill dateRaw for notes saved before date-filter feature
+accounts.forEach(a=>{
+  (a.notes||[]).forEach(n=>{
+    if(!n.dateRaw){
+      const parsed=n.date?new Date(n.date):null;
+      n.dateRaw=(parsed&&!isNaN(parsed))?parsed.toISOString().slice(0,10):todayISO();
+    }
+  });
+});
+let sel=null,theme=localStorage.getItem('btheme')||'dark';
+let drawerAcct=null,drawerTask=null;
+let globalFilter='none';
+let notesDateFilter='all'; // all | today | week | month | custom
+let notesCustomFrom='';
+let notesCustomTo='';
+let taskFilter='all';
+let completedOpen=true;
+
+function acColor(i){return COLORS[i%COLORS.length];}
+function acIdx(id){return accounts.findIndex(a=>a.id===id);}
+
+function applyTheme(){document.documentElement.setAttribute('data-theme',theme);document.getElementById('tbtn').textContent=theme==='dark'?'☀️ Light':'🌙 Dark';localStorage.setItem('btheme',theme);}
+function toggleTheme(){theme=theme==='dark'?'light':'dark';applyTheme();}
+applyTheme();
+document.getElementById('hdate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+function save(){localStorage.setItem('board-v9',JSON.stringify(accounts));}
+function openModal(){document.getElementById('modal').classList.add('open');setTimeout(()=>document.getElementById('a-name').focus(),80);}
+function closeModal(){document.getElementById('modal').classList.remove('open');document.getElementById('a-name').value='';document.getElementById('a-contact').value='';}
+
+function saveAccount(){
+  const name=document.getElementById('a-name').value.trim();if(!name)return;
+  accounts.unshift({id:Date.now(),name,contact:document.getElementById('a-contact').value.trim(),tasks:[],notes:[]});
+  save();closeModal();renderAll();selectA(accounts[0].id);
+}
+function deleteAccount(id){
+  if(!confirm('Delete this account?'))return;
+  accounts=accounts.filter(a=>a.id!==id);sel=null;save();renderAll();
+  document.getElementById('detail').innerHTML='<div class="empty-st"><span style="font-size:44px;opacity:.15;">🏢</span><span>Select or add an account</span></div>';
+}
+function selectA(id){sel=id;globalFilter='none';renderAll();renderDetail();renderGlobalView();}
+function renderAll(){renderSB();renderChips();renderStats();}
+
+function setGlobalFilter(f){
+  globalFilter=f;
+  document.getElementById('global-view').style.display=f!=='none'?'block':'none';
+  document.getElementById('main-layout').style.display=f!=='none'?'none':'grid';
+  if(f!=='none'){
+    const labels={all:'All Tasks',todo:'To Do',inprog:'In Progress',done:'Completed',notes:'All Call Notes'};
+    document.getElementById('gv-title').textContent=labels[f]||f;
+    renderGlobalView();
+  }
+  renderStats();
+}
+
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function daysAgoISO(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+
+function matchesNotesDateFilter(dateRaw){
+  if(notesDateFilter==='all')return true;
+  if(!dateRaw)return notesDateFilter==='all';
+  if(notesDateFilter==='today')return dateRaw===todayISO();
+  if(notesDateFilter==='week')return dateRaw>=daysAgoISO(7)&&dateRaw<=todayISO();
+  if(notesDateFilter==='month')return dateRaw>=daysAgoISO(30)&&dateRaw<=todayISO();
+  if(notesDateFilter==='custom'){
+    if(notesCustomFrom&&dateRaw<notesCustomFrom)return false;
+    if(notesCustomTo&&dateRaw>notesCustomTo)return false;
+    return true;
+  }
+  return true;
+}
+
+function setNotesDateFilter(f){
+  notesDateFilter=f;
+  if(f!=='custom'){notesCustomFrom='';notesCustomTo='';}
+  renderGlobalView();
+}
+
+function setNotesCustomRange(){
+  notesCustomFrom=document.getElementById('nf-from').value;
+  notesCustomTo=document.getElementById('nf-to').value;
+  notesDateFilter='custom';
+  renderGlobalView();
+}
+
+function renderNotesDateFilters(){
+  const opts=[
+    {key:'all',label:'All'},
+    {key:'today',label:'Today'},
+    {key:'week',label:'Last 7 days'},
+    {key:'month',label:'Last 30 days'},
+    {key:'custom',label:'Custom range'},
+  ];
+  let html=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">`;
+  html+=opts.map(o=>`<button onclick="setNotesDateFilter('${o.key}')" style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;border:.5px solid ${notesDateFilter===o.key?'var(--accent)':'var(--border2)'};background:${notesDateFilter===o.key?'var(--accent-l)':'var(--surface)'};color:${notesDateFilter===o.key?'var(--accent)':'var(--muted)'};">${o.label}</button>`).join('');
+  html+=`</div>`;
+  if(notesDateFilter==='custom'){
+    html+=`<div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+      <label style="font-size:12px;color:var(--muted);">From <input type="date" id="nf-from" value="${notesCustomFrom}" style="margin-left:4px;padding:6px 8px;border-radius:7px;border:.5px solid var(--border2);background:var(--surface);color:var(--text);font-family:inherit;font-size:12px;"></label>
+      <label style="font-size:12px;color:var(--muted);">To <input type="date" id="nf-to" value="${notesCustomTo}" style="margin-left:4px;padding:6px 8px;border-radius:7px;border:.5px solid var(--border2);background:var(--surface);color:var(--text);font-family:inherit;font-size:12px;"></label>
+      <button onclick="setNotesCustomRange()" class="tb" style="font-size:12px;">Apply</button>
+    </div>`;
+  }
+  return html;
+}
+
+function renderGlobalView(){
+  if(globalFilter==='none')return;
+  const el=document.getElementById('gv-list');
+  const filtersEl=document.getElementById('gv-notes-filters');
+
+  if(globalFilter==='notes'){
+    filtersEl.style.display='block';
+    filtersEl.innerHTML=renderNotesDateFilters();
+
+    let notes=[];
+    accounts.forEach(a=>{
+      a.notes.forEach(n=>{
+        notes.push({...n,acctName:a.name,acctId:a.id,acctColor:acColor(acIdx(a.id))});
+      });
+    });
+
+    // apply date filter
+    notes = notes.filter(n=>matchesNotesDateFilter(n.dateRaw));
+
+    // sort by date (most recent first), fallback to id
+    notes.sort((a,b)=>{
+      const da=a.dateRaw||'', db=b.dateRaw||'';
+      if(da&&db&&da!==db) return db.localeCompare(da);
+      return b.id-a.id;
+    });
+
+    if(!notes.length){el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted);font-size:14px;">No call notes match this filter</div>';return;}
+    el.innerHTML=notes.map(n=>`
+      <div class="note-card">
+        <div class="nc-hdr">
+          <div style="flex:1;min-width:0;">
+            <div class="nc-title">${n.title}</div>
+            ${n.sub?`<div class="nc-subject">${n.sub}</div>`:''}
+            <div class="nc-meta">
+              <span class="nc-pill" style="background:${n.acctColor}22;color:${n.acctColor};">\u25cf ${n.acctName}</span>
+              ${n.date?`<span class="nc-pill">\ud83d\udcc5 ${n.date}</span>`:''}
+              ${n.att?`<span class="nc-pill">\ud83d\udc65 ${n.att}</span>`:''}
+            </div>
+          </div>
+          <button class="nc-del" onclick="deleteNote(${n.acctId},${n.id});renderGlobalView();">Delete</button>
+        </div>
+        <div class="nc-body">
+          ${n.sum?`<div class="sum-box"><div class="sum-lbl">\u2726 Summary</div><div class="sum-text">${n.sum}</div></div>`:''}
+          <button class="tb" onclick="summarizeNote(${n.acctId},${n.id});renderGlobalView();" style="margin-bottom:10px;">\u2726 ${n.sum?'Re-summarize':'Summarize'} with AI</button>
+          <span class="tog-raw" onclick="toggleRaw(${n.acctId},${n.id});renderGlobalView();">${n.showRaw?'Hide original \u25b2':'Show original notes \u25bc'}</span>
+          ${n.showRaw?`<div class="raw-box"><div class="raw-lbl">Original notes</div><div class="raw-text">${n.body}</div></div>`:''}
+        </div>
+      </div>`).join('');
+    return;
+  }
+
+  filtersEl.style.display='none';
+
+  let tasks=[];
+  accounts.forEach(a=>{
+    a.tasks.forEach(t=>{
+      if(globalFilter==='all'||t.status===globalFilter){
+        tasks.push({...t,acctName:a.name,acctId:a.id,acctColor:acColor(acIdx(a.id))});
+      }
+    });
+  });
+  if(!tasks.length){el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted);font-size:14px;">No tasks found</div>';return;}
+  el.innerHTML=tasks.map(t=>{
+    const ov=isOv(t.due)&&t.status!=='done';
+    const priC={high:'ph',medium:'pm',low:'pl'}[t.priority]||'';
+    const priL={high:'High',medium:'Medium',low:'Low'}[t.priority]||'';
+    const stC={todo:'amber',inprog:'blue',done:'green',pending:'red'}[t.status]||'';
+    const stL={todo:'To do',inprog:'In progress',done:'Done',pending:'On hold'}[t.status]||'';
+    return `<div class="task-card" style="margin-bottom:8px;" onclick="openDrawer(${t.acctId},${t.id})">
+      <div class="tc-top">
+        <div class="tc-text ${t.status==='done'?'done':''}">${t.text}</div>
+        ${priL?`<span class="tc-pri ${priC}">${priL}</span>`:''}
+      </div>
+      <div class="tc-meta">
+        <div class="tc-pills">
+          <span class="tc-pill" style="background:${t.acctColor}22;color:${t.acctColor};">● ${t.acctName}</span>
+          <span class="tc-pill" style="color:var(--${stC});">${stL}</span>
+          ${t.due?`<span class="tc-pill ${ov?'ov':''}">📅 ${fmtD(t.due)}</span>`:''}
+          ${t.assignee?`<span class="tc-pill">👤 ${t.assignee}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderStats(){
+  const all=accounts.flatMap(a=>a.tasks);
+  const allNotes=accounts.flatMap(a=>a.notes);
+  document.getElementById('sa').textContent=all.length;
+  document.getElementById('st').textContent=all.filter(t=>t.status==='todo').length;
+  document.getElementById('sp').textContent=all.filter(t=>t.status==='inprog').length;
+  document.getElementById('sd').textContent=all.filter(t=>t.status==='done').length;
+  document.getElementById('sn').textContent=allNotes.length;
+  document.getElementById('sa').parentElement.classList.toggle('active-filter',globalFilter==='all');
+  document.getElementById('st').parentElement.classList.toggle('active-filter',globalFilter==='todo');
+  document.getElementById('sp').parentElement.classList.toggle('active-filter',globalFilter==='inprog');
+  document.getElementById('sd').parentElement.classList.toggle('active-filter',globalFilter==='done');
+  if(globalFilter==='all'){document.getElementById('stat-all').style.borderColor='var(--text2)';}
+  if(globalFilter==='todo'){document.getElementById('stat-todo').style.borderColor='var(--amber)';}
+  if(globalFilter==='inprog'){document.getElementById('stat-inprog').style.borderColor='var(--blue)';}
+  if(globalFilter==='done'){document.getElementById('stat-done').style.borderColor='var(--accent)';}
+  ['all','todo','inprog','done'].forEach(f=>{
+    if(globalFilter!==f){const id='stat-'+(f==='inprog'?'inprog':f);const el=document.getElementById(id);if(el)el.style.borderColor='';}
+  });
+}
+
+function renderChips(){
+  document.getElementById('chips').innerHTML=
+    accounts.map((a,i)=>{const col=acColor(i);return`<button class="chip ${a.id===sel?'active':''}" onclick="selectA(${a.id})" style="--ac:${col};"><span class="cdot" style="background:${col};"></span>${a.name}</button>`;}).join('')+
+    `<button class="chip add" onclick="openModal()">+ Add</button>`;
+}
+
+function renderSB(){
+  const q=(document.getElementById('search')||{}).value?.toLowerCase()||'';
+  const el=document.getElementById('acct-list');
+  const list=accounts.filter(a=>!q||a.name.toLowerCase().includes(q));
+  if(!list.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 4px;">No accounts</div>';return;}
+  el.innerHTML=list.map((a,i)=>{
+    const col=acColor(i);
+    const open=a.tasks.filter(t=>t.status!=='done').length;
+    const notes=a.notes.length;
+    return `<div class="acct-item ${a.id===sel?'active':''}" onclick="selectA(${a.id})" style="--ac:${col};">
+      <div class="acct-dot" style="background:${col};"></div>
+      <div class="acct-info">
+        <div class="acct-name">${a.name}</div>
+        ${a.contact?`<div class="acct-sub">${a.contact}</div>`:''}
+        <div class="acct-tags">
+          ${open>0?`<span class="stag" style="background:${col}22;color:${col};">${open} open</span>`:''}
+          ${notes>0?`<span class="stag" style="background:var(--accent-l);color:var(--accent);">${notes} note${notes>1?'s':''}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(t){
+  document.querySelectorAll('.dtab').forEach((el,i)=>el.classList.toggle('active',['tasks','notes'][i]===t));
+  document.querySelectorAll('.dsec').forEach(s=>s.classList.remove('active'));
+  document.getElementById('ds-'+t).classList.add('active');
+}
+
+function setTaskFilter(f){
+  taskFilter=f;
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));
+  const el=document.querySelector('.fb.f-'+f);if(el)el.classList.add('active');
+  renderDetail();
+}
+
+function isOv(due){if(!due)return false;return new Date(due+'T00:00:00')<new Date(new Date().toDateString());}
+function fmtD(due){
+  if(!due)return '';
+  const d=new Date(due+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);
+  const diff=Math.round((d-today)/864e5);
+  if(diff===0)return 'Today';if(diff===1)return 'Tomorrow';if(diff===-1)return 'Yesterday';
+  if(diff<0)return Math.abs(diff)+'d overdue';if(diff<7)return 'In '+diff+'d';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function stLabel(s){return{todo:'To do',inprog:'In progress',done:'Done',pending:'On hold'}[s]||s;}
+function stClass(s){return{todo:'amber',inprog:'blue',done:'green',pending:'red'}[s]||'';}
+
+function openDrawer(aId,tId){
+  const a=accounts.find(a=>a.id===aId);const t=a?.tasks.find(t=>t.id===tId);
+  if(!a||!t)return;
+  drawerAcct=aId;drawerTask=tId;
+  const col=acColor(acIdx(aId));
+  const ov=isOv(t.due)&&t.status!=='done';
+  const priLabel={high:'High priority',medium:'Medium priority',low:'Low priority'}[t.priority]||'No priority';
+  const priCol={high:'red',medium:'amber',low:'green'}[t.priority]||'';
+  document.getElementById('dr-title').textContent=t.text;
+  document.getElementById('dr-grid').innerHTML=`
+    <div class="dg"><div class="dg-l">Status</div><div class="dg-v ${stClass(t.status)}">${stLabel(t.status)}</div></div>
+    <div class="dg"><div class="dg-l">Account</div><div class="dg-v"><span style="width:9px;height:9px;border-radius:50%;background:${col};display:inline-block;"></span>${a.name}</div></div>
+    <div class="dg"><div class="dg-l">Due date</div><div class="dg-v ${ov?'ov':''}">${t.due?fmtD(t.due):'Not set'}</div></div>
+    <div class="dg"><div class="dg-l">Assignee</div><div class="dg-v">${t.assignee||'Unassigned'}</div></div>
+    <div class="dg"><div class="dg-l">Priority</div><div class="dg-v ${priCol}">${priLabel}</div></div>
+    <div class="dg"><div class="dg-l">Created</div><div class="dg-v" style="font-size:12px;">${new Date(t.id).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div>
+  `;
+  const canF=t.status!=='done'&&t.status!=='pending';
+  const canB=t.status==='inprog'||t.status==='done';
+  const nextL={todo:'→ In progress',inprog:'→ Mark done'}[t.status]||'';
+  const prevL={inprog:'← Back to To do',done:'← Back to In progress'}[t.status]||'';
+  document.getElementById('dr-acts').innerHTML=`
+    ${canB?`<button class="da bck" onclick="drawerMove('b')">${prevL}</button>`:''}
+    ${canF?`<button class="da fwd" onclick="drawerMove('f')">${nextL}</button>`:''}
+    ${t.status!=='done'?`<button class="da" onclick="drawerHold()">${t.status==='pending'?'✓ Unblock':'⏸ Put on hold'}</button>`:''}
+    <button class="da del" onclick="drawerDelete()">Delete task</button>
+  `;
+  document.getElementById('dov').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+
+function closeDrawer(){document.getElementById('dov').classList.remove('open');document.getElementById('drawer').classList.remove('open');drawerAcct=null;drawerTask=null;}
+function drawerMove(d){moveTask(drawerAcct,drawerTask,d);const a=accounts.find(a=>a.id===drawerAcct);const t=a?.tasks.find(t=>t.id===drawerTask);if(t)openDrawer(drawerAcct,drawerTask);}
+function drawerHold(){setPending(drawerAcct,drawerTask);openDrawer(drawerAcct,drawerTask);}
+function drawerDelete(){if(!confirm('Delete this task?'))return;deleteTask(drawerAcct,drawerTask);closeDrawer();}
+
+function moveTask(aId,tId,d){
+  const a=accounts.find(a=>a.id===aId);const t=a.tasks.find(t=>t.id===tId);
+  const flow=['todo','inprog','done'];const i=flow.indexOf(t.status);
+  if(d==='f'&&i<2)t.status=flow[i+1];else if(d==='b'&&i>0)t.status=flow[i-1];
+  save();renderDetail();renderAll();renderGlobalView();
+}
+function setPending(aId,tId){
+  const a=accounts.find(a=>a.id===aId);const t=a.tasks.find(t=>t.id===tId);
+  t.status=t.status==='pending'?'todo':'pending';
+  save();renderDetail();renderAll();renderGlobalView();
+}
+function deleteTask(aId,tId){
+  if(!confirm('Are you sure you want to delete this task?'))return;
+  const a=accounts.find(a=>a.id===aId);a.tasks=a.tasks.filter(t=>t.id!==tId);
+  save();renderDetail();renderAll();renderGlobalView();
+}
+
+function taskCard(t,aId){
+  const ov=isOv(t.due)&&t.status!=='done';
+  const canF=t.status!=='done'&&t.status!=='pending';
+  const canB=t.status==='inprog'||t.status==='done';
+  const priC={high:'ph',medium:'pm',low:'pl'}[t.priority]||'';
+  const priL={high:'High',medium:'Medium',low:'Low'}[t.priority]||'';
+  return `<div class="task-card" onclick="openDrawer(${aId},${t.id})">
+    <div class="tc-top">
+      <div class="tc-text ${t.status==='done'?'done':''}">${t.text}</div>
+      ${priL?`<span class="tc-pri ${priC}">${priL}</span>`:''}
+    </div>
+    <div class="tc-meta">
+      <div class="tc-pills">
+        ${t.due?`<span class="tc-pill ${ov?'ov':''}">📅 ${fmtD(t.due)}</span>`:''}
+        ${t.assignee?`<span class="tc-pill">👤 ${t.assignee}</span>`:''}
+      </div>
+    </div>
+    <div class="tc-actions" onclick="event.stopPropagation()">
+      ${canB?`<button class="tb tb2" onclick="moveTask(${aId},${t.id},'b')">← Back</button>`:''}
+      ${canF?`<button class="tb tf" onclick="moveTask(${aId},${t.id},'f')">Next →</button>`:''}
+      <button class="tb-delete" onclick="deleteTask(${aId},${t.id})">Delete</button>
+    </div>
+  </div>`;
+}
+
+function toggleCompleted(){
+  completedOpen=!completedOpen;
+  const body=document.getElementById('completed-body');
+  const chev=document.getElementById('completed-chev');
+  if(body)body.style.display=completedOpen?'flex':'none';
+  if(chev)chev.classList.toggle('open',completedOpen);
+}
+
+function renderDetail(){
+  const el=document.getElementById('detail');
+  const a=accounts.find(a=>a.id===sel);
+  if(!a)return;
+  const col=acColor(acIdx(a.id));
+  const allTasks=a.tasks;
+  const todo=allTasks.filter(t=>t.status==='todo');
+  const inprog=allTasks.filter(t=>t.status==='inprog');
+  const done=allTasks.filter(t=>t.status==='done');
+  const hold=allTasks.filter(t=>t.status==='pending');
+
+  // apply task filter
+  let filtered=allTasks;
+  if(taskFilter==='todo')filtered=todo;
+  else if(taskFilter==='inprog')filtered=inprog;
+  else if(taskFilter==='done')filtered=done;
+  else if(taskFilter==='hold')filtered=hold;
+
+  const activeOpen=filtered.filter(t=>t.status!=='done');
+  const activeDone=filtered.filter(t=>t.status==='done');
+
+  el.innerHTML=`
+    <div class="det-hdr">
+      <div>
+        <div class="det-name"><span class="det-dot" style="background:${col};"></span>${a.name}</div>
+        ${a.contact?`<div class="det-contact">${a.contact}</div>`:''}
+      </div>
+      <button class="del-btn" onclick="deleteAccount(${a.id})">Delete</button>
+    </div>
+    <div class="tab-row">
+      <button class="dtab active" onclick="switchTab('tasks')">Tasks</button>
+      <button class="dtab" onclick="switchTab('notes')">Call Notes</button>
+    </div>
+    <div class="dsec active" id="ds-tasks">
+      <div class="add-card">
+        <p class="add-card-title">Add new task</p>
+        <textarea class="f" id="tk-text" placeholder="What needs to be done?" style="min-height:65px;"></textarea>
+        <div class="r3">
+          <div><p class="fl">Status</p><select class="f" id="tk-st" style="margin-bottom:0;"><option value="todo">To do</option><option value="inprog">In progress</option><option value="pending">On hold</option></select></div>
+          <div><p class="fl">Priority</p><select class="f" id="tk-pr" style="margin-bottom:0;"><option value="">None</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
+          <div><p class="fl">Due date</p><input class="f" id="tk-due" type="date" style="margin-bottom:0;" /></div>
+        </div>
+        <div style="margin-top:10px;"><p class="fl">Assignee</p><input class="f" id="tk-as" list="assignee-options" placeholder="Type a name or pick a suggestion" style="margin-bottom:12px;" /><datalist id="assignee-options"><option value="Me (Sahana)"><option value="Vivek"><option value="Kannan"><option value="Dev team"><option value="Customer"></datalist></div>
+        <button class="add-btn2" onclick="addTask(${a.id})">+ Add task</button>
+      </div>
+
+      <div class="filter-bar">
+        <button class="fb f-all ${taskFilter==='all'?'active':''}" onclick="setTaskFilter('all')">All <span class="fb-count">${allTasks.length}</span></button>
+        <button class="fb f-todo ${taskFilter==='todo'?'active':''}" onclick="setTaskFilter('todo')">To do <span class="fb-count">${todo.length}</span></button>
+        <button class="fb f-inprog ${taskFilter==='inprog'?'active':''}" onclick="setTaskFilter('inprog')">In progress <span class="fb-count">${inprog.length}</span></button>
+        <button class="fb f-done ${taskFilter==='done'?'active':''}" onclick="setTaskFilter('done')">Done <span class="fb-count">${done.length}</span></button>
+        ${hold.length>0?`<button class="fb f-hold ${taskFilter==='hold'?'active':''}" onclick="setTaskFilter('hold')">On hold <span class="fb-count">${hold.length}</span></button>`:''}
+      </div>
+
+      <div class="kb-wrap">
+        ${taskFilter==='all'||taskFilter==='todo'?`
+        <div class="k-col c-todo">
+          <div class="k-col-hdr"><div class="k-col-left"><div class="k-dot"></div><span class="k-title">To do</span></div><span class="k-badge">${todo.length}</span></div>
+          <div class="k-divider"></div>
+          <div class="k-cards">${todo.length?todo.map(t=>taskCard(t,a.id)).join(''):'<div class="k-empty">No tasks here</div>'}</div>
+        </div>`:''}
+        ${taskFilter==='all'||taskFilter==='inprog'?`
+        <div class="k-col c-inprog">
+          <div class="k-col-hdr"><div class="k-col-left"><div class="k-dot"></div><span class="k-title">In progress</span></div><span class="k-badge">${inprog.length}</span></div>
+          <div class="k-divider"></div>
+          <div class="k-cards">${inprog.length?inprog.map(t=>taskCard(t,a.id)).join(''):'<div class="k-empty">No tasks here</div>'}</div>
+        </div>`:''}
+        ${(taskFilter==='all'||taskFilter==='hold')&&hold.length>0?`
+        <div class="k-col c-hold">
+          <div class="k-col-hdr"><div class="k-col-left"><div class="k-dot"></div><span class="k-title">On hold</span></div><span class="k-badge">${hold.length}</span></div>
+          <div class="k-divider"></div>
+          <div class="k-cards">${hold.map(t=>taskCard(t,a.id)).join('')}</div>
+        </div>`:''}
+      </div>
+
+      ${done.length>0&&(taskFilter==='all'||taskFilter==='done')?`
+      <div class="completed-section">
+        <div class="completed-hdr" onclick="toggleCompleted()" style="border-radius:${completedOpen?'14px 14px 0 0':'14px'};">
+          <div class="completed-hdr-left">
+            <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+            <h3>Completed</h3>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="completed-badge">${done.length}</span>
+            <span class="completed-chevron ${completedOpen?'open':''}" id="completed-chev">▼</span>
+          </div>
+        </div>
+        <div class="completed-body" id="completed-body" style="display:${completedOpen?'flex':'none'};flex-direction:column;gap:8px;">
+          ${done.map(t=>`
+            <div class="done-card" onclick="openDrawer(${a.id},${t.id})">
+              <div class="done-card-text">${t.text}</div>
+              <div class="done-card-meta">
+                <div class="done-pills">
+                  ${t.due?`<span class="tc-pill">📅 ${fmtD(t.due)}</span>`:''}
+                  ${t.assignee?`<span class="tc-pill">👤 ${t.assignee}</span>`:''}
+                  <span class="done-check">✓ Done</span>
+                </div>
+              </div>
+              <div class="tc-actions" onclick="event.stopPropagation()">
+                <button class="tb tb2" onclick="moveTask(${a.id},${t.id},'b')">↩ Reopen</button>
+                <button class="tb-delete" onclick="deleteTask(${a.id},${t.id})">Delete</button>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`:''}
+    </div>
+
+    <div class="dsec" id="ds-notes">
+      <div class="add-card">
+        <p class="add-card-title">New call note</p>
+        <p class="fl">Call title</p><input class="f" id="nt-title" placeholder="e.g. Weekly check-in" />
+        <p class="fl">Subject / agenda</p><input class="f" id="nt-sub" placeholder="e.g. Form builder updates, JSA review" />
+        <div class="r2">
+          <div><p class="fl">Date</p><input class="f" id="nt-date" type="date" style="margin-bottom:0;" /></div>
+          <div><p class="fl">Attendees</p><input class="f" id="nt-att" placeholder="e.g. Vivek, Graham" style="margin-bottom:0;" /></div>
+        </div>
+        <p class="fl" style="margin-top:10px;">Notes</p>
+        <textarea class="f" id="nt-body" placeholder="Type or paste your notes... AI will summarize automatically." style="min-height:120px;margin-bottom:12px;"></textarea>
+        <div style="display:flex;gap:8px;">
+          <button class="add-btn2" id="nt-btn" onclick="addNote(${a.id})" style="flex:1;">Save note</button>
+        </div>
+      </div>
+      ${a.notes.length?a.notes.map(n=>`
+        <div class="note-card">
+          <div class="nc-hdr">
+            <div style="flex:1;min-width:0;">
+              <div class="nc-title">${n.title}</div>
+              ${n.sub?`<div class="nc-subject">${n.sub}</div>`:''}
+              <div class="nc-meta">
+                ${n.date?`<span class="nc-pill">📅 ${n.date}</span>`:''}
+                ${n.att?`<span class="nc-pill">👥 ${n.att}</span>`:''}
+              </div>
+            </div>
+            <button class="nc-del" onclick="deleteNote(${a.id},${n.id})">Delete</button>
+          </div>
+          <div class="nc-body">
+            ${n.sum?`<div class="sum-box"><div class="sum-lbl">✦ AI Summary</div><div class="sum-text">${n.sum}</div></div>`:''}
+            <button class="tb" onclick="summarizeNote(${a.id},${n.id})" style="margin-bottom:10px;">✦ ${n.sum?'Re-summarize':'Summarize'} with AI</button>
+            <span class="tog-raw" onclick="toggleRaw(${a.id},${n.id})">${n.showRaw?'Hide original ▲':'Show original notes ▼'}</span>
+            ${n.showRaw?`<div class="raw-box"><div class="raw-lbl">Original notes</div><div class="raw-text">${n.body}</div></div>`:''}
+          </div>
+        </div>`).join(''):`<div style="font-size:13px;color:var(--muted);padding:4px 0;">No call notes yet.</div>`}
+    </div>`;
+  populateAssigneeOptions();
+}
+
+function populateAssigneeOptions(){
+  const dl=document.getElementById('assignee-options');
+  if(!dl)return;
+  const defaults=['Me (Sahana)','Vivek','Kannan','Dev team','Customer'];
+  const used=new Set();
+  accounts.forEach(a=>a.tasks.forEach(t=>{ if(t.assignee) used.add(t.assignee); }));
+  defaults.forEach(d=>used.add(d));
+  dl.innerHTML=[...used].map(v=>`<option value="${v}"></option>`).join('');
+}
+
+function addTask(aId){
+  const text=document.getElementById('tk-text').value.trim();
+  if(!text){document.getElementById('tk-text').focus();return;}
+  const a=accounts.find(a=>a.id===aId);
+  a.tasks.unshift({id:Date.now(),text,status:document.getElementById('tk-st').value,priority:document.getElementById('tk-pr').value,due:document.getElementById('tk-due').value,assignee:document.getElementById('tk-as').value.trim()});
+  document.getElementById('tk-text').value='';document.getElementById('tk-due').value='';
+  save();renderDetail();renderAll();
+}
+
+function localSummarize(body, sub, att){
+  const lines = body.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  let sentences = [];
+  lines.forEach(l=>{
+    l.split(/(?<=[.!?])\s+/).forEach(s=>{ if(s.trim()) sentences.push(s.trim()); });
+  });
+  if(!sentences.length) sentences=[body.trim()];
+
+  const actionWords=/\b(will|need to|needs to|should|must|to do|todo|action|follow up|follow-up|let's|lets|plan to|going to|next step|next steps|assign|ship|send|review|check|fix|update|build|create|schedule|confirm)\b/i;
+  const actions=[];
+  const points=[];
+  sentences.forEach(s=>{
+    if(actionWords.test(s)) actions.push(s);
+    else points.push(s);
+  });
+
+  let keyPoints = points.length ? points : sentences;
+  keyPoints = [...keyPoints].sort((a,b)=>b.length-a.length).slice(0,4);
+  keyPoints = sentences.filter(s=>keyPoints.includes(s)).slice(0,4);
+  if(!keyPoints.length) keyPoints = sentences.slice(0,3);
+
+  let out = '';
+  if(sub) out += 'Subject: '+sub+'\n';
+  if(att) out += 'Attendees: '+att+'\n';
+  if(sub||att) out += '\n';
+
+  out += 'Key points:\n';
+  keyPoints.forEach(p=>{ out += '\u2022 '+p+'\n'; });
+
+  if(actions.length){
+    out += '\nAction items:\n';
+    actions.slice(0,6).forEach(a=>{ out += '\u2022 '+a+'\n'; });
+  }
+
+  out += '\n(Auto-generated summary from your notes \u2014 edit as needed.)';
+  return out.trim();
+}
+
+function addNote(aId){
+  const bodyEl=document.getElementById('nt-body');
+  const body=bodyEl.value.trim();
+  if(!body){bodyEl.focus();bodyEl.style.borderColor='var(--red)';setTimeout(()=>bodyEl.style.borderColor='',1200);return;}
+
+  const sub=document.getElementById('nt-sub').value.trim();
+  const att=document.getElementById('nt-att').value.trim();
+  const title=document.getElementById('nt-title').value.trim()||'Untitled call';
+  const cd=document.getElementById('nt-date').value;
+  const rawDate = cd || new Date().toISOString().slice(0,10);
+  const dateStr = cd ? new Date(cd+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  const a=accounts.find(a=>a.id===aId);
+  a.notes.unshift({id:Date.now(),title,sub,att,date:dateStr,dateRaw:rawDate,body,sum:'',showRaw:false});
+  ['nt-title','nt-sub','nt-att','nt-date','nt-body'].forEach(id=>document.getElementById(id).value='');
+  save();
+  renderDetail();
+  renderSB();
+  renderChips();
+}
+
+function summarizeNote(aId,nId){
+  const a=accounts.find(a=>a.id===aId);
+  const n=a.notes.find(n=>n.id===nId);
+  if(!n)return;
+  n.sum = localSummarize(n.body, n.sub, n.att);
+  save();
+  renderDetail();
+  renderGlobalView();
+}
+function deleteNote(aId,nId){if(!confirm('Are you sure you want to delete this note?'))return;const a=accounts.find(a=>a.id===aId);a.notes=a.notes.filter(n=>n.id!==nId);save();renderDetail();}
+function toggleRaw(aId,nId){const a=accounts.find(a=>a.id===aId);const n=a.notes.find(n=>n.id===nId);n.showRaw=!n.showRaw;renderDetail();}
+
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+renderAll();
+</script>
+</body>
+</html>
