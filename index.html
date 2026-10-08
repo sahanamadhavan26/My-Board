@@ -357,7 +357,7 @@ textarea.f{resize:none;line-height:1.5;}
 <div class="modal-ov" id="modal">
   <div class="modal">
     <h3>Add account</h3>
-    <input class="mf" id="a-name" placeholder="Company name (e.g. Telamon)" />
+    <input class="mf" id="a-name" placeholder="Account name" />
     <input class="mf" id="a-contact" placeholder="Contact name (optional)" />
     <div class="mbtns">
       <button class="mbtn c" onclick="closeModal()">Cancel</button>
@@ -968,7 +968,7 @@ function renderDetail(){
           <div><p class="fl">Priority</p><select class="f" id="tk-pr" style="margin-bottom:0;"><option value="">None</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
           <div><p class="fl">Due date</p><input class="f" id="tk-due" type="date" style="margin-bottom:0;" /></div>
         </div>
-        <div style="margin-top:10px;"><p class="fl">Assignee</p><input class="f" id="tk-as" list="assignee-options" placeholder="Type a name or pick a suggestion" style="margin-bottom:12px;" /><datalist id="assignee-options"><option value="Me (Sahana)"><option value="Vivek"><option value="Kannan"><option value="Dev team"><option value="Customer"></datalist></div>
+        <div style="margin-top:10px;"><p class="fl">Assignee</p><input class="f" id="tk-as" list="assignee-options" placeholder="Type a name or pick a suggestion" style="margin-bottom:12px;" /><datalist id="assignee-options"><option value="Me"><option value="Dev team"><option value="Customer"></datalist></div>
         <button class="add-btn2" onclick="addTask(${a.id})">+ Add task</button>
       </div>
 
@@ -1037,10 +1037,10 @@ function renderDetail(){
       <div class="add-card">
         <p class="add-card-title">New call note</p>
         <p class="fl">Call title</p><input class="f" id="nt-title" placeholder="e.g. Weekly check-in" />
-        <p class="fl">Subject / agenda</p><input class="f" id="nt-sub" placeholder="e.g. Form builder updates, JSA review" />
+        <p class="fl">Subject / agenda</p><input class="f" id="nt-sub" placeholder="e.g. Product updates, onboarding review" />
         <div class="r2">
           <div><p class="fl">Date</p><input class="f" id="nt-date" type="date" style="margin-bottom:0;" /></div>
-          <div><p class="fl">Attendees</p><input class="f" id="nt-att" placeholder="e.g. Vivek, Graham" style="margin-bottom:0;" /></div>
+          <div><p class="fl">Attendees</p><input class="f" id="nt-att" placeholder="e.g. Alex, Jordan" style="margin-bottom:0;" /></div>
         </div>
         <p class="fl" style="margin-top:10px;">Notes</p>
         <textarea class="f" id="nt-body" placeholder="Type or paste your notes... AI will summarize automatically." style="min-height:120px;margin-bottom:12px;"></textarea>
@@ -1079,7 +1079,7 @@ function renderDetail(){
 function populateAssigneeOptions(){
   const dl=document.getElementById('assignee-options');
   if(!dl)return;
-  const defaults=['Me (Sahana)','Vivek','Kannan','Dev team','Customer'];
+  const defaults=['Me','Dev team','Customer'];
   const used=new Set();
   accounts.forEach(a=>a.tasks.forEach(t=>{ if(t.assignee) used.add(t.assignee); }));
   defaults.forEach(d=>used.add(d));
