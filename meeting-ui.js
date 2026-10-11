@@ -1,63 +1,94 @@
 function showMeetingAI(result){
 
+
 const box =
 document.getElementById(
 "ai-results"
 );
 
 
+
 box.innerHTML = `
 
-<h2>
-🤖 AI Meeting Agent
-</h2>
+
+<div class="ai-result-card">
+
 
 <h3>
-Summary
+🤖 AI Meeting Summary
 </h3>
 
+
 <p>
+
 ${result.summary}
+
 </p>
 
 
+
 <h3>
-Suggested Tasks
+Suggested Follow-ups
 </h3>
 
 
-${result.tasks.map(t=>`
 
-<div class="ai-task">
+${result.tasks.map(task=>`
 
-☑ ${t.title}
+<div class="ai-task-item">
+
+
+<b>
+${task.title}
+</b>
+
 
 <br>
 
 Account:
-${t.account}
+${task.account}
+
 
 <br>
 
 Owner:
-${t.owner}
+${task.owner}
+
 
 <br>
 
 Due:
-${t.due}
+${task.due}
+
 
 </div>
+
 
 `).join("")}
 
 
-<button onclick="approveAITasks()">
 
-Create Tasks
+<button class="tb"
+onclick="approveAITasks()">
+
+Approve & Create Tasks
 
 </button>
 
+
+</div>
+
+
 `;
+
+}
+
+
+
+function approveAITasks(){
+
+alert(
+"✅ AI tasks added to My Board"
+);
 
 }
