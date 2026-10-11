@@ -1003,6 +1003,7 @@ function noteCard(n,acctId,acctPill){
         ${editingNotes.has(n.id)?noteEditForm(n,acctId):`
         <div class="nc-body">
           ${n.sum?`<div class="sum-box"><div class="sum-hdr" onclick="toggleSummary(${n.id})"><div class="sum-lbl">✦ ${tr('summary')}</div><span class="sum-toggle">${collapsedSummaries.has(n.id)?tr('show')+' ▼':tr('hide')+' ▲'}</span></div>${collapsedSummaries.has(n.id)?'':`<div class="sum-text">${esc(n.sum)}</div>`}</div>`:''}
+          <button class="tb" onclick="openMeeting(${acctId},accounts.find(a=>a.id===${acctId}).notes.find(n=>n.id===${n.id}).body)" style="margin-bottom:10px;">Review follow-up tasks</button>
           <button class="tb" onclick="summarizeNote(${acctId},${n.id})" style="margin-bottom:10px;">✦ ${n.sum?tr('resummarize'):tr('summarize')}</button>
           <span class="tog-raw" onclick="toggleRaw(${acctId},${n.id})">${n.showRaw?tr('hideOriginal')+' ▲':tr('showOriginal')+' ▼'}</span>
           ${n.showRaw?`<div class="raw-box"><div class="raw-lbl">${tr('originalNotes')}</div><div class="raw-text">${esc(n.body)}</div></div>`:''}
@@ -1492,5 +1493,6 @@ renderEmpty();
 checkReminders();
 
 </script>
+<script src="meetings.js"></script>
 </body>
 </html>
