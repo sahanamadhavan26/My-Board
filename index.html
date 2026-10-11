@@ -411,13 +411,28 @@ border:1px solid var(--border);
 
 <div class="hdr">
   <div class="hdr-top">
-    <div><h1>My Board</h1><div class="hdr-date" id="hdate"></div></div>
+    <div>
+      <h1>My Board</h1>
+      <div class="hdr-date" id="hdate"></div>
+    </div>
+
     <div class="hdr-right">
-      
-      <button class="icon-btn" id="bell-btn" onclick="openPanel('rem')" aria-label="Reminders">🔔<span class="badge" id="bell-badge" style="display:none;"></span></button>
+
+      <button class="icon-btn" id="bell-btn" onclick="openPanel('rem')" aria-label="Reminders">
+        🔔
+        <span class="badge" id="bell-badge" style="display:none;"></span>
+      </button>
+
+      <button class="ai-header-btn" onclick="openAIAssistant()">
+        🤖 AI Meeting Assistant
+      </button>
+
       <button class="theme-btn" id="tbtn" onclick="toggleTheme()"></button>
+
       <button class="add-btn" onclick="openModal()" data-i18n="addAccountBtn"></button>
+
       <button class="avatar" id="hdr-avatar" onclick="openPanel('pf')" aria-label="Profile"></button>
+
     </div>
   </div>
 </div>
