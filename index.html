@@ -1592,6 +1592,7 @@ renderEmpty();
 checkReminders();
 
 </script>
+  <!-- AI Meeting Assistant Popup -->
 <div id="ai-panel" class="ai-panel">
 
   <div class="ai-panel-header">
@@ -1599,28 +1600,26 @@ checkReminders();
     <button onclick="closeAIMeeting()">✕</button>
   </div>
 
-  <div class="ai-panel-body">
+  <p>
+    Record customer calls and automatically create meeting notes and tasks.
+  </p>
 
-    <p class="ai-subtitle">
-      Record customer calls and automatically create meeting notes and tasks.
+  <button class="record-main-btn" onclick="startMeetingRecording()">
+    🎙 Start Recording
+  </button>
+
+  <div id="record-status"></div>
+
+  <div class="ai-summary">
+    <h3>Meeting Summary</h3>
+    <p id="ai-notes">
+      AI generated notes will appear here after recording.
     </p>
-
-    <button class="record-main-btn" onclick="startMeetingRecording()">
-      🎙 Start Recording
-    </button>
-
-    <div id="record-status"></div>
-
-    <div id="ai-output">
-      <h3>Meeting Summary</h3>
-      <p>Your AI notes will appear here.</p>
-    </div>
-
-    <button class="create-task-btn">
-      + Create Tasks in My Board
-    </button>
-
   </div>
+
+  <button class="create-task-btn">
+    + Create Tasks in My Board
+  </button>
 
 </div>
 </body>
