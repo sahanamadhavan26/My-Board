@@ -1592,48 +1592,6 @@ renderEmpty();
 checkReminders();
 
 </script>
-<!-- AI Meeting Assistant -->
-
-<div class="ai-meeting-card">
-
-<h3>🎙 AI Meeting Assistant</h3>
-
-<p>
-Record customer calls and generate summaries + follow-up tasks.
-</p>
-
-
-<button 
-class="tb"
-onclick="startMeetingRecording()">
-
-🎙 Record Customer Call
-
-</button>
-
-
-<div id="record-status"></div>
-
-
-<div id="ai-results"></div>
-
-
-</div>
-
-
-<script src="meeting-recorder.js"></script>
-
-<script src="ai-agent.js"></script>
-
-<script src="meeting-ui.js"></script>
-
-<script>
-function openAIAssistant(){
-    document.querySelector('.ai-meeting-card').scrollIntoView({
-        behavior:'smooth'
-    });
-}
-</script>
 
 </body>
 </html>
