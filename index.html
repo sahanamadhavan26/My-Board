@@ -43,6 +43,21 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .hdr h1{font-size:19px;font-weight:700;}
 .hdr-date{font-size:12px;color:var(--muted);margin-top:2px;}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .ai-header-btn{
+  background:var(--accent);
+  color:white;
+  border:none;
+  border-radius:12px;
+  padding:8px 14px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.ai-header-btn:hover{
+  opacity:.85;
+}
 .theme-btn{background:var(--surface2);border:.5px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--text2);font-family:inherit;}
 .add-btn{background:var(--accent);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
 .icon-btn{position:relative;background:var(--surface2);border:.5px solid var(--border2);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:15px;flex-shrink:0;padding:0;}
@@ -1611,5 +1626,14 @@ onclick="startMeetingRecording()">
 <script src="ai-agent.js"></script>
 
 <script src="meeting-ui.js"></script>
+
+<script>
+function openAIAssistant(){
+    document.querySelector('.ai-meeting-card').scrollIntoView({
+        behavior:'smooth'
+    });
+}
+</script>
+
 </body>
 </html>
