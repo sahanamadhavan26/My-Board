@@ -438,9 +438,9 @@ border:1px solid var(--border);
         <span class="badge" id="bell-badge" style="display:none;"></span>
       </button>
 
-      <button class="ai-header-btn" onclick="openAIAssistant()">
-        🤖 AI Meeting Assistant
-      </button>
+     <button class="ai-header-btn" onclick="openAIMeeting()">
+🤖 AI Assistant
+</button>
 
       <button class="theme-btn" id="tbtn" onclick="toggleTheme()"></button>
 
@@ -1592,6 +1592,36 @@ renderEmpty();
 checkReminders();
 
 </script>
+<div id="ai-panel" class="ai-panel">
 
+  <div class="ai-panel-header">
+    <h2>🤖 AI Meeting Assistant</h2>
+    <button onclick="closeAIMeeting()">✕</button>
+  </div>
+
+  <div class="ai-panel-body">
+
+    <p class="ai-subtitle">
+      Record customer calls and automatically create meeting notes and tasks.
+    </p>
+
+    <button class="record-main-btn" onclick="startMeetingRecording()">
+      🎙 Start Recording
+    </button>
+
+    <div id="record-status"></div>
+
+    <div id="ai-output">
+      <h3>Meeting Summary</h3>
+      <p>Your AI notes will appear here.</p>
+    </div>
+
+    <button class="create-task-btn">
+      + Create Tasks in My Board
+    </button>
+
+  </div>
+
+</div>
 </body>
 </html>
