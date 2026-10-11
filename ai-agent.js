@@ -1,34 +1,58 @@
 async function processMeeting(audioBlob){
 
-    document.getElementById(
-        "record-status"
-    ).innerHTML =
-    "🤖 AI analyzing meeting...";
+    const status =
+    document.getElementById("record-status");
 
 
-    const formData = new FormData();
-
-    formData.append(
-        "audio",
-        audioBlob,
-        "meeting.webm"
-    );
+    status.innerHTML =
+    "🤖 AI is analyzing the meeting...";
 
 
-    const response =
-    await fetch(
-        "/api/meeting-agent",
-        {
-            method:"POST",
-            body:formData
-        }
-    );
+    // Temporary AI response for testing
+    // Later we connect OpenAI API
+
+    const aiResult = {
+
+        summary:
+        "Customer discussed product updates, timeline, and next steps.",
 
 
-    const result =
-    await response.json();
+        tasks:[
+
+            {
+                title:
+                "Send follow-up documentation",
+
+                account:
+                "Customer Account",
+
+                owner:
+                "Sahana",
+
+                due:
+                "Next week"
+            },
 
 
-    showMeetingAI(result);
+            {
+                title:
+                "Schedule follow-up meeting",
+
+                account:
+                "Customer Account",
+
+                owner:
+                "Sahana",
+
+                due:
+                "Next week"
+            }
+
+        ]
+
+    };
+
+
+    showMeetingAI(aiResult);
 
 }
