@@ -1557,7 +1557,7 @@ function renderSmartDraft(){
       '<div style="padding:2px 12px;overflow-y:auto;max-height:330px;min-height:80px;">'+
       (matches.length?matches.map(o=>smartDraftCard(o.x,o.i)).join(''):'<p style="font-size:12px;color:var(--muted);padding:10px 0;">No items in this view</p>')+'</div></section>';
   });
-  const tab=(id,label,color,count)=>'<button type="button" onclick="smartDraftFilter(\''+id+'\')" style="border:1px solid '+(d.active===id?color:'var(--border)')+';background:'+(d.active===id?color:'transparent')+';color:'+(d.active===id?'#fff':'var(--text)')+';border-radius:10px;padding:9px 13px;font-size:12px;font-weight:700;cursor:pointer;">'+label+' '+count+'</button>';
+  const tab=(id,label,color,count)=>'<button type="button" onclick="smartDraftFilter(\''+id+'\')" style="border:2px solid '+color+';background:'+(d.active===id?color:color+'20')+';color:'+(d.active===id?'#fff':'var(--text)')+';border-radius:10px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer;">'+label+' '+count+'</button>';
   el.innerHTML='<div style="border:1px solid var(--border);border-radius:16px;padding:16px;">'+
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><div><div style="font-weight:750;font-size:18px;">✦ Smart Review</div><div style="font-size:12px;color:var(--muted);margin-top:5px;">Review, select and save. Suggestions use structured-text rules (AI coming later).</div></div><button class="tb" onclick="smartDraft=null;renderSmartDraft()">Close</button></div>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;">'+tab('all','All','#5262C6',d.items.length)+types.map(([t,n,,c],i)=>tab(t,n,c,totals[i])).join('')+'</div>'+
@@ -1609,6 +1609,53 @@ function extractMeetingRecommendations(note){
     const dueText=dueMatch&&!/^(not stated|unknown|none)$/i.test(dueMatch[1].trim())?dueMatch[1].trim():'';
     const isoDue=/^\d{4}-\d{2}-\d{2}$/.test(dueText)?dueText:'';
     results.push({id:results.length,type,text:content,owner,due:isoDue,dueText,approved:false});
+  }
+  // Dialogue preview: detect explicit commitments and decisions in speaker-labelled transcripts.
+  // This is deliberately conservative; uncertain assignments remain unassigned.
+  if(!results.length){
+    const entries=lines.map(line=>{
+      const m=line.match(/^(?:\[(\d{1,2}:\d{2})\]\s*)?([^:]{2,35}):\s*(.+)$/);
+      return m?{speaker:m[2].trim(),message:m[3].trim(),time:m[1]||''}:null;
+    }).filter(Boolean);
+    const dateBase=new Date((note.dateRaw||todayISO())+'T12:00:00');
+    const dueFrom=(msg)=>{
+      const iso=msg.match(/\b20\d{2}-\d{2}-\d{2}\b/);
+      if(iso)return iso[0];
+      const full=msg.match(/\b(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+(?:November|December|January|February|March|April|May|June|July|August|September|October)\s+\d{1,2}(?:,\s*20\d{2})?/i);
+      if(full){const dt=new Date(full[0]+(full[0].match(/20\d{2}/)?'':', '+dateBase.getFullYear()));return isNaN(dt)?'':isoOf(dt);}
+      if(/\btomorrow\b/i.test(msg)){const dt=new Date(dateBase);dt.setDate(dt.getDate()+1);return isoOf(dt);}
+      if(/\b(?:today|end of today)\b/i.test(msg))return isoOf(dateBase);
+      return '';
+    };
+    const add=(type,text,owner,due)=>{
+      const clean=text.trim();if(clean.length<10)return;
+      const key=type+':'+clean.toLowerCase();if(seen.has(key))return;
+      seen.add(key);results.push({id:results.length,type,text:clean,owner:owner||'',due:due||'',dueText:'',approved:false});
+    };
+    for(let i=0;i<entries.length;i++){
+      const {speaker,message,time}=entries[i];
+      const next=entries[i+1];
+      // Direct assignment: "Raji, could you prepare..." / "Sahana, please..."
+      const assign=message.match(/^([A-Z][a-z]+),?\s+(?:can you|could you|please|would you)\s+(.+?)(?:\?|$)/i);
+      if(assign)add('task',assign[2].replace(/\?$/,'')+' ('+speaker+' requested)',assign[1],dueFrom(message+' '+(next?.message||'')));
+      // Explicit personal commitment.
+      const promise=message.match(/^(?:yes,?\s*)?(?:sure,?\s*)?I(?:'ll| will| can)\s+(.+?)(?:[.!]|$)/i);
+      if(promise&&!/^(?:help|have|be|need)\b/i.test(promise[1]))add('task',promise[1],speaker,dueFrom(message));
+      if(/\b(?:let's|we will|we should)\s+(?:tentatively\s+)?(?:move|postpone|delay|prioritize|include|schedule|hold off|not release)\b/i.test(message)||/\b(?:agreed|the decision is)\b/i.test(message)){
+        add('decision',message,'','');
+      }
+      if(/\b(?:follow up|check with|confirm with|send reminders|coordinate with)\b/i.test(message)){
+        add('followup',message,speaker,dueFrom(message));
+      }
+    }
+    // Preserve the latest explicitly stated deadline for an owner's matching task.
+    for(const item of results.filter(x=>x.type==='task'&&x.owner)){
+      const related=entries.filter(e=>e.speaker.toLowerCase()===item.owner.toLowerCase()&&/\b(?:deadline|instead of|by Monday|by Tuesday|by Wednesday|by Thursday|by Friday|change that)\b/i.test(e.message));
+      if(related.length&&/design/i.test(item.text)){
+        const last=related[related.length-1];const newDue=dueFrom(last.message);
+        if(newDue)item.due=newDue;
+      }
+    }
   }
   return results;
 }
