@@ -1522,22 +1522,29 @@ function smartDraftSelectAll(checked){
   smartDraft.items.forEach(x=>{if((smartDraft.active==='all'||x.type===smartDraft.active)&&(!smartDraft.person||smartDraftOwner(x.owner)===smartDraft.person))x.approved=checked;});
   renderSmartDraft();
 }
+function smartDraftToggleEdit(i){
+  const el=document.getElementById('smart-edit-'+i);
+  if(el)el.hidden=!el.hidden;
+}
 function smartDraftCard(item,i){
   const colors={task:'#5B9CF6',decision:'#24B99B',followup:'#B58AF4'};
   const color=colors[item.type],label={task:'Task',decision:'Decision',followup:'Follow-up'}[item.type];
-  const clean=item.text.replace(/\s*[—–-]\s*Owner:.*$/i,'').trim();
-  const person=item.type==='task'?'<span style="color:var(--muted);font-size:11px;">👤 '+esc(smartDraftOwner(item.owner))+'</span>':'';
-  const due=item.type==='task'&&item.due?'<span style="color:var(--muted);font-size:11px;">📅 '+esc(item.due)+'</span>':'';
-  return '<div style="border-bottom:1px solid var(--border);padding:10px 2px;">'+
-    '<div style="display:flex;align-items:flex-start;gap:9px;">'+
+  const clean=item.text.replace(/\s*[—–-]\s*Owner:.*$/i,'').replace(/\s*\([^)]*requested\)$/i,'').trim();
+  const person=item.owner?'<span style="font-size:12px;color:var(--muted);">👤 '+esc(item.owner)+'</span>':'';
+  const due=item.due?'<span style="font-size:12px;color:var(--muted);">📅 '+esc(item.due)+'</span>':'';
+  return '<div style="border-bottom:1px solid var(--border);padding:12px 2px;min-width:0;">'+
+    '<div style="display:flex;align-items:flex-start;gap:9px;min-width:0;">'+
     '<input type="checkbox" aria-label="Approve '+label+'" style="margin-top:4px;accent-color:'+color+';" '+(item.approved?'checked':'')+' onchange="smartDraftCheck('+i+',this.checked);smartDraftUpdateCount()">'+
-    '<div style="flex:1;min-width:0;"><div style="font-size:13px;line-height:1.45;font-weight:550;overflow-wrap:anywhere;">'+esc(clean)+'</div>'+
-    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:5px;">'+person+due+'</div></div>'+
-    '<details style="flex-shrink:0;"><summary style="cursor:pointer;font-size:12px;color:'+color+';list-style:none;">Edit ▾</summary>'+
-    '<div style="margin-top:9px;min-width:min(65vw,280px);max-width:340px;">'+
-    '<textarea class="f" style="min-height:65px;margin-bottom:7px;" aria-label="Edit '+label+'" oninput="smartDraftEdit('+i+',\'text\',this.value)">'+esc(item.text)+'</textarea>'+
-    (item.type==='task'?'<label class="fl">Assigned to</label><input class="f" value="'+esc(item.owner)+'" placeholder="Unassigned" oninput="smartDraftEdit('+i+',\'owner\',this.value)"><label class="fl">Due date</label><input class="f" type="date" value="'+esc(item.due)+'" onchange="smartDraftEdit('+i+',\'due\',this.value)">':'')+
-    '</div></details></div></div>';
+    '<div style="flex:1;min-width:0;"><div style="font-size:13px;line-height:1.5;font-weight:600;overflow-wrap:anywhere;">'+esc(clean)+'</div>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">'+person+due+'</div></div>'+
+    '<button class="tb" type="button" style="color:'+color+';flex-shrink:0;" onclick="smartDraftToggleEdit('+i+')">Edit</button></div>'+
+    '<div id="smart-edit-'+i+'" hidden style="margin:12px 0 0;padding:12px;border-radius:10px;background:var(--bg);">'+
+    '<label class="fl">Action / summary</label><textarea class="f" style="min-height:65px;margin-bottom:8px;" oninput="smartDraftEdit('+i+',\'text\',this.value)">'+esc(item.text)+'</textarea>'+
+    (item.type!=='decision'?'<label class="fl">Responsible person</label><input class="f" value="'+esc(item.owner||'')+'" placeholder="Unassigned" oninput="smartDraftEdit('+i+',\'owner\',this.value)">'+
+      '<label class="fl">Due date</label><input class="f" type="date" value="'+esc(item.due||'')+'" onchange="smartDraftEdit('+i+',\'due\',this.value)">'+
+      '<label class="fl">Reminder preference (saved as a preference; alerts not enabled yet)</label><select class="f" onchange="smartDraftEdit('+i+',\'remindBefore\',this.value)">'+
+      [['','No reminder'],['0','At due time'],['60','1 hour before'],['120','2 hours before'],['1440','1 day before']].map(([v,n])=>'<option value="'+v+'" '+(String(item.remindBefore||'')===v?'selected':'')+'>'+n+'</option>').join('')+'</select>':'')+
+    '<button class="tb" onclick="smartDraftToggleEdit('+i+')">Done</button></div></div>';
 }
 function smartDraftUpdateCount(){
   const el=document.getElementById('smart-selected-count');
@@ -1548,8 +1555,8 @@ function renderSmartDraft(){
   if(!d){el.innerHTML='';return;}
   const types=[['task','Tasks','☑','#5B9CF6'],['decision','Decisions','✓','#24B99B'],['followup','Follow-ups','↗','#B58AF4']];
   const totals=types.map(([t])=>d.items.filter(x=>x.type===t).length);
-  const people=[...new Set(d.items.filter(x=>x.type==='task').map(x=>smartDraftOwner(x.owner)))].sort();
-  const visible=(type)=>d.items.map((x,i)=>({x,i})).filter(o=>o.x.type===type&&(!d.person||smartDraftOwner(o.x.owner)===d.person||type!=='task'));
+  const people=[...new Set(d.items.filter(x=>x.type==='task'||x.type==='followup').map(x=>smartDraftOwner(x.owner)))].sort();
+  const visible=(type)=>d.items.map((x,i)=>({x,i})).filter(o=>o.x.type===type&&(!d.person||smartDraftOwner(o.x.owner)===d.person||type==='decision'));
   const columns=types.filter(([t])=>d.active==='all'||d.active===t).map(([type,name,symbol,color])=>{
     const matches=visible(type);
     return '<section style="min-width:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card);">'+
@@ -1564,7 +1571,7 @@ function renderSmartDraft(){
     '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;">'+
     '<label style="font-size:12px;">Assigned to: <select class="f" style="display:inline-block;width:auto;margin:0;padding:7px 12px;" onchange="smartDraftPerson(this.value)"><option value="">Everyone</option>'+people.map(p=>'<option value="'+esc(p)+'" '+(d.person===p?'selected':'')+'>'+esc(p)+'</option>').join('')+'</select></label>'+
     '<div style="display:flex;gap:10px;align-items:center;"><span id="smart-selected-count" style="font-size:12px;color:var(--muted);">'+d.items.filter(x=>x.approved).length+' selected</span><button class="tb" onclick="smartDraftSelectAll(true)">Select visible</button><button class="tb" onclick="smartDraftSelectAll(false)">Clear visible</button></div></div>'+
-    '<div style="display:grid;grid-template-columns:repeat('+columns.length+',minmax(0,1fr));gap:12px;overflow-x:auto;">'+columns.join('')+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat('+columns.length+',minmax(0,1fr));gap:12px;min-width:0;">'+columns.join('')+'</div>'+
     '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;"><button class="add-btn2" onclick="saveSmartDraft()">Save meeting & approved items</button><span style="font-size:12px;color:var(--muted);">No items are added without your approval.</span></div></div>';
 }
 function saveSmartDraft(){
@@ -1573,7 +1580,7 @@ function saveSmartDraft(){
   const note={...d.note,id:Date.now(),sum:'',showRaw:false,approvedDecisions:[],approvedFollowups:[]};
   const selected=d.items.filter(x=>x.approved&&x.text.trim());
   for(const [i,item] of selected.entries()){
-    if(item.type==='task')a.tasks.unshift({id:Date.now()+i+1,text:item.text.trim(),status:'todo',priority:'',due:item.due||'',assignee:item.owner||'',sourceNoteId:note.id,sourceMeetingTitle:note.title});
+    if(item.type==='task')a.tasks.unshift({id:Date.now()+i+1,text:item.text.trim(),status:'todo',priority:'',due:item.due||'',assignee:item.owner||'',sourceNoteId:note.id,sourceMeetingTitle:note.title,remindBefore:item.remindBefore||''});
     if(item.type==='decision')note.approvedDecisions.push(item.text.trim());
     if(item.type==='followup')note.approvedFollowups.push(item.text.trim());
   }
