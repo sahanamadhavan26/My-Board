@@ -1515,31 +1515,57 @@ function analyzeMeetingDraft(aId){
 function smartDraftEdit(i,field,value){if(smartDraft?.items[i])smartDraft.items[i][field]=value;}
 function smartDraftCheck(i,value){if(smartDraft?.items[i])smartDraft.items[i].approved=value;}
 function smartDraftFilter(type){if(!smartDraft)return;smartDraft.active=type;renderSmartDraft();}
+function smartDraftOwner(owner){return (owner||'').trim()||'Unassigned';}
+function smartDraftPerson(value){if(!smartDraft)return;smartDraft.person=value;renderSmartDraft();}
+function smartDraftSelectAll(checked){
+  if(!smartDraft)return;
+  smartDraft.items.forEach(x=>{if((smartDraft.active==='all'||x.type===smartDraft.active)&&(!smartDraft.person||smartDraftOwner(x.owner)===smartDraft.person))x.approved=checked;});
+  renderSmartDraft();
+}
 function smartDraftCard(item,i){
-  const label={task:'Task',decision:'Decision',followup:'Follow-up'}[item.type];
-  return '<div style="padding:12px;border:1px solid var(--border);border-radius:12px;min-width:0;">'+
-    '<label style="display:flex;gap:9px;align-items:center;font-size:13px;font-weight:700;margin-bottom:8px;"><input type="checkbox" '+(item.approved?'checked':'')+' onchange="smartDraftCheck('+i+',this.checked)"> '+label+'</label>'+
-    '<textarea class="f" style="min-height:74px;margin-bottom:8px;" aria-label="Edit '+label+'" oninput="smartDraftEdit('+i+',\'text\',this.value)">'+esc(item.text)+'</textarea>'+
-    (item.type==='task'?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;"><div><label class="fl">Assigned to</label><input class="f" placeholder="Unassigned" value="'+esc(item.owner)+'" oninput="smartDraftEdit('+i+',\'owner\',this.value)"></div><div><label class="fl">Due date</label><input class="f" type="date" value="'+esc(item.due)+'" onchange="smartDraftEdit('+i+',\'due\',this.value)"></div></div>':'')+
-    '</div>';
+  const colors={task:'#5B9CF6',decision:'#24B99B',followup:'#B58AF4'};
+  const color=colors[item.type],label={task:'Task',decision:'Decision',followup:'Follow-up'}[item.type];
+  const clean=item.text.replace(/\s*[—–-]\s*Owner:.*$/i,'').trim();
+  const person=item.type==='task'?'<span style="color:var(--muted);font-size:11px;">👤 '+esc(smartDraftOwner(item.owner))+'</span>':'';
+  const due=item.type==='task'&&item.due?'<span style="color:var(--muted);font-size:11px;">📅 '+esc(item.due)+'</span>':'';
+  return '<div style="border-bottom:1px solid var(--border);padding:10px 2px;">'+
+    '<div style="display:flex;align-items:flex-start;gap:9px;">'+
+    '<input type="checkbox" aria-label="Approve '+label+'" style="margin-top:4px;accent-color:'+color+';" '+(item.approved?'checked':'')+' onchange="smartDraftCheck('+i+',this.checked);smartDraftUpdateCount()">'+
+    '<div style="flex:1;min-width:0;"><div style="font-size:13px;line-height:1.45;font-weight:550;overflow-wrap:anywhere;">'+esc(clean)+'</div>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:5px;">'+person+due+'</div></div>'+
+    '<details style="flex-shrink:0;"><summary style="cursor:pointer;font-size:12px;color:'+color+';list-style:none;">Edit ▾</summary>'+
+    '<div style="margin-top:9px;min-width:min(65vw,280px);max-width:340px;">'+
+    '<textarea class="f" style="min-height:65px;margin-bottom:7px;" aria-label="Edit '+label+'" oninput="smartDraftEdit('+i+',\'text\',this.value)">'+esc(item.text)+'</textarea>'+
+    (item.type==='task'?'<label class="fl">Assigned to</label><input class="f" value="'+esc(item.owner)+'" placeholder="Unassigned" oninput="smartDraftEdit('+i+',\'owner\',this.value)"><label class="fl">Due date</label><input class="f" type="date" value="'+esc(item.due)+'" onchange="smartDraftEdit('+i+',\'due\',this.value)">':'')+
+    '</div></details></div></div>';
+}
+function smartDraftUpdateCount(){
+  const el=document.getElementById('smart-selected-count');
+  if(el&&smartDraft)el.textContent=smartDraft.items.filter(x=>x.approved).length+' selected';
 }
 function renderSmartDraft(){
-  const d=smartDraft,el=document.getElementById('smart-draft-results');if(!d||!el)return;
-  const types=[['task','Tasks','☑'],['decision','Decisions','✓'],['followup','Follow-ups','↗']];
+  const d=smartDraft,el=document.getElementById('smart-draft-results');if(!el)return;
+  if(!d){el.innerHTML='';return;}
+  const types=[['task','Tasks','☑','#5B9CF6'],['decision','Decisions','✓','#24B99B'],['followup','Follow-ups','↗','#B58AF4']];
   const totals=types.map(([t])=>d.items.filter(x=>x.type===t).length);
-  const cols=types.map(([type,name,symbol],j)=>{
-    const matches=d.items.map((x,i)=>({x,i})).filter(o=>o.x.type===type);
-    return '<section style="min-width:0;border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--card);">'+
-      '<div style="font-size:14px;font-weight:750;margin-bottom:12px;">'+symbol+' '+name+' <span style="opacity:.65;">('+totals[j]+')</span></div>'+
-      (matches.length?matches.map(o=>smartDraftCard(o.x,o.i)).join('<div style="height:9px;"></div>'):'<p style="font-size:12px;color:var(--muted);">None identified</p>')+'</section>';
+  const people=[...new Set(d.items.filter(x=>x.type==='task').map(x=>smartDraftOwner(x.owner)))].sort();
+  const visible=(type)=>d.items.map((x,i)=>({x,i})).filter(o=>o.x.type===type&&(!d.person||smartDraftOwner(o.x.owner)===d.person||type!=='task'));
+  const columns=types.filter(([t])=>d.active==='all'||d.active===t).map(([type,name,symbol,color])=>{
+    const matches=visible(type);
+    return '<section style="min-width:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card);">'+
+      '<div style="padding:12px 14px;border-top:3px solid '+color+';border-bottom:1px solid var(--border);font-weight:750;font-size:14px;">'+symbol+' '+name+' <span style="opacity:.6;font-size:12px;">'+matches.length+'</span></div>'+
+      '<div style="padding:2px 12px;overflow-y:auto;max-height:330px;min-height:80px;">'+
+      (matches.length?matches.map(o=>smartDraftCard(o.x,o.i)).join(''):'<p style="font-size:12px;color:var(--muted);padding:10px 0;">No items in this view</p>')+'</div></section>';
   });
+  const tab=(id,label,color,count)=>'<button type="button" onclick="smartDraftFilter(\''+id+'\')" style="border:1px solid '+(d.active===id?color:'var(--border)')+';background:'+(d.active===id?color:'transparent')+';color:'+(d.active===id?'#fff':'var(--text)')+';border-radius:10px;padding:9px 13px;font-size:12px;font-weight:700;cursor:pointer;">'+label+' '+count+'</button>';
   el.innerHTML='<div style="border:1px solid var(--border);border-radius:16px;padding:16px;">'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><div style="font-weight:750;font-size:17px;">✦ Smart Review</div><div style="font-size:12px;color:var(--muted);margin-top:5px;">Review suggestions before saving. This preview uses structured-text rules, not AI.</div></div><button class="tb" onclick="smartDraft=null;renderSmartDraft()">Close</button></div>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;">'+
-    '<button class="tb" onclick="smartDraftFilter(\'all\')">All ('+d.items.length+')</button>'+
-    types.map(([t,n],i)=>'<button class="tb" onclick="smartDraftFilter(\''+t+'\')">'+n+' ('+totals[i]+')</button>').join('')+'</div>'+
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">'+cols.filter((_,i)=>d.active==='all'||types[i][0]===d.active).join('')+'</div>'+
-    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px;"><button class="add-btn2" onclick="saveSmartDraft()">Save meeting & approved items</button><span style="font-size:12px;color:var(--muted);">Unchecked suggestions will not be added.</span></div></div>';
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><div><div style="font-weight:750;font-size:18px;">✦ Smart Review</div><div style="font-size:12px;color:var(--muted);margin-top:5px;">Review, select and save. Suggestions use structured-text rules (AI coming later).</div></div><button class="tb" onclick="smartDraft=null;renderSmartDraft()">Close</button></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;">'+tab('all','All','#5262C6',d.items.length)+types.map(([t,n,,c],i)=>tab(t,n,c,totals[i])).join('')+'</div>'+
+    '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;">'+
+    '<label style="font-size:12px;">Assigned to: <select class="f" style="display:inline-block;width:auto;margin:0;padding:7px 12px;" onchange="smartDraftPerson(this.value)"><option value="">Everyone</option>'+people.map(p=>'<option value="'+esc(p)+'" '+(d.person===p?'selected':'')+'>'+esc(p)+'</option>').join('')+'</select></label>'+
+    '<div style="display:flex;gap:10px;align-items:center;"><span id="smart-selected-count" style="font-size:12px;color:var(--muted);">'+d.items.filter(x=>x.approved).length+' selected</span><button class="tb" onclick="smartDraftSelectAll(true)">Select visible</button><button class="tb" onclick="smartDraftSelectAll(false)">Clear visible</button></div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat('+columns.length+',minmax(0,1fr));gap:12px;overflow-x:auto;">'+columns.join('')+'</div>'+
+    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;"><button class="add-btn2" onclick="saveSmartDraft()">Save meeting & approved items</button><span style="font-size:12px;color:var(--muted);">No items are added without your approval.</span></div></div>';
 }
 function saveSmartDraft(){
   const d=smartDraft;if(!d)return;
