@@ -1348,16 +1348,17 @@ function renderDetail(){
           <div style="font-weight:700;margin-bottom:6px;">✦ Smart Meetings</div>
           <p style="font-size:12px;color:var(--muted);margin-bottom:0;">AI-powered meeting organizer (planned). Paste a transcript from any meeting app or write notes below. Review suggested tasks, decisions and follow-ups before approving them. Suggestions currently use structured-text rules, not AI.</p>
         </div>
-        <p class="add-card-title">${tr('newCallNote')}</p>
-        <p class="fl">${tr('callTitle')}</p><input class="f" id="nt-title" placeholder="${esc(tr('callTitlePh'))}" />
-        <div class="work-only"><p class="fl">${tr('subject')}</p><input class="f" id="nt-sub" placeholder="${esc(tr('subjectPh'))}" /></div>
+        <p class="add-card-title">Paste meeting notes or transcript</p>
         <div class="r2">
-          <div><p class="fl">${tr('date')}</p><input class="f" id="nt-date" type="date" style="margin-bottom:0;" /></div>
-          <div class="work-only"><p class="fl">${tr('attendees')}</p><input class="f" id="nt-att" placeholder="${esc(tr('attendeesPh'))}" style="margin-bottom:0;" /></div>
+          <div><p class="fl">Meeting title (optional)</p><input class="f" id="nt-title" placeholder="e.g. Weekly product sync" /></div>
+          <div><p class="fl">Date</p><input class="f" id="nt-date" type="date" /></div>
         </div>
-        <p class="fl" style="margin-top:10px;">${tr('notes')}</p>
-        <textarea class="f" id="nt-body" placeholder="${esc(tr('notesPh'))}" style="min-height:120px;margin-bottom:12px;"></textarea>
-        <button class="add-btn2" onclick="addNote(${a.id})">${tr('saveNote')}</button>
+        <div class="work-only"><p class="fl">Subject / agenda (optional)</p><input class="f" id="nt-sub" placeholder="e.g. Product updates" /></div>
+        <div class="work-only"><p class="fl">Attendees (optional)</p><input class="f" id="nt-att" placeholder="e.g. Alex, Jordan" /></div>
+        <textarea class="f" id="nt-body" placeholder="Paste your transcript or meeting notes here…" style="min-height:175px;margin-bottom:12px;"></textarea>
+        <button class="add-btn2" onclick="analyzeMeetingDraft(${a.id})">✦ Smart Organize</button>
+        <span style="font-size:12px;color:var(--muted);margin-left:10px;">Preview first · Nothing saved automatically</span>
+        <div id="smart-draft-results" style="margin-top:16px;"></div>
       </div>
       ${a.notes.length?a.notes.map(n=>noteCard(n,a.id,'')).join(''):`<div style="font-size:13px;color:var(--muted);padding:4px 0;">${tr('noNotes')}</div>`}
     </div>`;
@@ -1495,6 +1496,62 @@ function runSampleMeeting(aId){
   }
   renderDetail();renderAll();
   meetingStatus('Sample notes saved. No bot joined and no real meeting was recorded.');
+}
+
+
+/* ---------- SMART MEETING DRAFT REVIEW ---------- */
+let smartDraft=null;
+function analyzeMeetingDraft(aId){
+  const body=document.getElementById('nt-body')?.value.trim();
+  if(!body){toast('Paste notes or a transcript first.');document.getElementById('nt-body')?.focus();return;}
+  const title=document.getElementById('nt-title').value.trim()||'Meeting '+todayISO();
+  const date=document.getElementById('nt-date').value||todayISO();
+  const sub=document.getElementById('nt-sub')?.value.trim()||'';
+  const att=document.getElementById('nt-att')?.value.trim()||'';
+  const note={body,title,sub,att,dateRaw:date};
+  smartDraft={aId,note,items:extractMeetingRecommendations(note),active:'all'};
+  renderSmartDraft();
+}
+function smartDraftEdit(i,field,value){if(smartDraft?.items[i])smartDraft.items[i][field]=value;}
+function smartDraftCheck(i,value){if(smartDraft?.items[i])smartDraft.items[i].approved=value;}
+function smartDraftFilter(type){if(!smartDraft)return;smartDraft.active=type;renderSmartDraft();}
+function smartDraftCard(item,i){
+  const label={task:'Task',decision:'Decision',followup:'Follow-up'}[item.type];
+  return '<div style="padding:12px;border:1px solid var(--border);border-radius:12px;min-width:0;">'+
+    '<label style="display:flex;gap:9px;align-items:center;font-size:13px;font-weight:700;margin-bottom:8px;"><input type="checkbox" '+(item.approved?'checked':'')+' onchange="smartDraftCheck('+i+',this.checked)"> '+label+'</label>'+
+    '<textarea class="f" style="min-height:74px;margin-bottom:8px;" aria-label="Edit '+label+'" oninput="smartDraftEdit('+i+',\'text\',this.value)">'+esc(item.text)+'</textarea>'+
+    (item.type==='task'?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;"><div><label class="fl">Assigned to</label><input class="f" placeholder="Unassigned" value="'+esc(item.owner)+'" oninput="smartDraftEdit('+i+',\'owner\',this.value)"></div><div><label class="fl">Due date</label><input class="f" type="date" value="'+esc(item.due)+'" onchange="smartDraftEdit('+i+',\'due\',this.value)"></div></div>':'')+
+    '</div>';
+}
+function renderSmartDraft(){
+  const d=smartDraft,el=document.getElementById('smart-draft-results');if(!d||!el)return;
+  const types=[['task','Tasks','☑'],['decision','Decisions','✓'],['followup','Follow-ups','↗']];
+  const totals=types.map(([t])=>d.items.filter(x=>x.type===t).length);
+  const cols=types.map(([type,name,symbol],j)=>{
+    const matches=d.items.map((x,i)=>({x,i})).filter(o=>o.x.type===type);
+    return '<section style="min-width:0;border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--card);">'+
+      '<div style="font-size:14px;font-weight:750;margin-bottom:12px;">'+symbol+' '+name+' <span style="opacity:.65;">('+totals[j]+')</span></div>'+
+      (matches.length?matches.map(o=>smartDraftCard(o.x,o.i)).join('<div style="height:9px;"></div>'):'<p style="font-size:12px;color:var(--muted);">None identified</p>')+'</section>';
+  });
+  el.innerHTML='<div style="border:1px solid var(--border);border-radius:16px;padding:16px;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><div style="font-weight:750;font-size:17px;">✦ Smart Review</div><div style="font-size:12px;color:var(--muted);margin-top:5px;">Review suggestions before saving. This preview uses structured-text rules, not AI.</div></div><button class="tb" onclick="smartDraft=null;renderSmartDraft()">Close</button></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;">'+
+    '<button class="tb" onclick="smartDraftFilter(\'all\')">All ('+d.items.length+')</button>'+
+    types.map(([t,n],i)=>'<button class="tb" onclick="smartDraftFilter(\''+t+'\')">'+n+' ('+totals[i]+')</button>').join('')+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">'+cols.filter((_,i)=>d.active==='all'||types[i][0]===d.active).join('')+'</div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px;"><button class="add-btn2" onclick="saveSmartDraft()">Save meeting & approved items</button><span style="font-size:12px;color:var(--muted);">Unchecked suggestions will not be added.</span></div></div>';
+}
+function saveSmartDraft(){
+  const d=smartDraft;if(!d)return;
+  const a=accounts.find(x=>x.id===d.aId);if(!a)return;
+  const note={...d.note,id:Date.now(),sum:'',showRaw:false,approvedDecisions:[],approvedFollowups:[]};
+  const selected=d.items.filter(x=>x.approved&&x.text.trim());
+  for(const [i,item] of selected.entries()){
+    if(item.type==='task')a.tasks.unshift({id:Date.now()+i+1,text:item.text.trim(),status:'todo',priority:'',due:item.due||'',assignee:item.owner||'',sourceNoteId:note.id,sourceMeetingTitle:note.title});
+    if(item.type==='decision')note.approvedDecisions.push(item.text.trim());
+    if(item.type==='followup')note.approvedFollowups.push(item.text.trim());
+  }
+  a.notes.unshift(note);smartDraft=null;save();renderDetail();renderAll();toast('Meeting saved with '+selected.length+' approved items.');
 }
 
 /* ---------- RECOMMENDATIONS REVIEW (LOCAL, RULE-BASED PREVIEW) ---------- */
