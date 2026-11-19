@@ -1002,6 +1002,10 @@ function noteCard(n,acctId,acctPill){
         <div class="nc-body">
           ${n.sum?`<div class="sum-box"><div class="sum-hdr" onclick="toggleSummary(${n.id})"><div class="sum-lbl">✦ ${tr('summary')}</div><span class="sum-toggle">${collapsedSummaries.has(n.id)?tr('show')+' ▼':tr('hide')+' ▲'}</span></div>${collapsedSummaries.has(n.id)?'':`<div class="sum-text">${esc(n.sum)}</div>`}</div>`:''}
           <button class="tb" onclick="summarizeNote(${acctId},${n.id})" style="margin-bottom:10px;">✦ ${n.sum?tr('resummarize'):tr('summarize')}</button>
+          <button class="tb" onclick="openRecommendations(${acctId},${n.id})" style="margin:0 0 10px 8px;">✦ Review Recommendations</button>
+          ${(n.approvedDecisions||[]).length?`<div class="sum-box"><strong>Saved decisions</strong><div class="sum-text">${(n.approvedDecisions||[]).map(x=>'• '+esc(x)).join('<br>')}</div></div>`:''}
+          ${(n.approvedFollowups||[]).length?`<div class="sum-box"><strong>Saved follow-ups</strong><div class="sum-text">${(n.approvedFollowups||[]).map(x=>'• '+esc(x)).join('<br>')}</div></div>`:''}
+          <div id="recommendations-${acctId}-${n.id}"></div>
           <span class="tog-raw" onclick="toggleRaw(${acctId},${n.id})">${n.showRaw?tr('hideOriginal')+' ▲':tr('showOriginal')+' ▼'}</span>
           ${n.showRaw?`<div class="raw-box"><div class="raw-lbl">${tr('originalNotes')}</div><div class="raw-text">${esc(n.body)}</div></div>`:''}
         </div>`}
@@ -1493,6 +1497,91 @@ function runSampleMeeting(aId){
   }
   renderDetail();renderAll();
   meetingStatus('Sample notes saved. No bot joined and no real meeting was recorded.');
+}
+
+/* ---------- RECOMMENDATIONS REVIEW (LOCAL, RULE-BASED PREVIEW) ---------- */
+let pendingRecommendations=null;
+function extractMeetingRecommendations(note){
+  const lines=String(note.body||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const results=[],seen=new Set();
+  let section='';
+  for(const line of lines){
+    const heading=line.replace(/[:\s]+$/,'').toLowerCase();
+    if(/^(action items|decisions and reasons|decisions|open questions or blockers|follow-ups|follow ups|key discussion points)$/.test(heading)){section=heading;continue;}
+    if(/^(subject|attendees|coverage|sample transcript)/i.test(line))continue;
+    const content=line.replace(/^[•*\-]\s*/,'').trim();
+    if(!content||content.length<12)continue;
+    let type='';
+    if(section==='action items')type='task';
+    else if(section==='decisions and reasons'||section==='decisions')type='decision';
+    else if(section==='follow-ups'||section==='follow ups')type='followup';
+    else if(/^(?:follow up|check back|reconnect|schedule a follow-up)\b/i.test(content))type='followup';
+    else if(/^(?:decision:|decided:|agreed:)\s*/i.test(content))type='decision';
+    else if(/^(?:action:|task:|todo:|to do:)\s*/i.test(content))type='task';
+    if(!type)continue;
+    const key=type+':'+content.toLowerCase();
+    if(seen.has(key))continue;
+    seen.add(key);
+    const ownerMatch=content.match(/\bOwner:\s*([^;,.]+?)(?=\s*[;,.]|\s+deadline:|\s+due:|$)/i);
+    const dueMatch=content.match(/\b(?:deadline|due):\s*([^;,.]+)/i);
+    const owner=ownerMatch&&!/^(not stated|unknown|unassigned)$/i.test(ownerMatch[1].trim())?ownerMatch[1].trim():'';
+    const dueText=dueMatch&&!/^(not stated|unknown|none)$/i.test(dueMatch[1].trim())?dueMatch[1].trim():'';
+    const isoDue=/^\d{4}-\d{2}-\d{2}$/.test(dueText)?dueText:'';
+    results.push({id:results.length,type,text:content,owner,due:isoDue,dueText,approved:false});
+  }
+  return results;
+}
+function openRecommendations(aId,nId){
+  const acct=accounts.find(a=>a.id===aId),note=acct&&acct.notes.find(n=>n.id===nId);
+  if(!note)return;
+  const items=extractMeetingRecommendations(note);
+  pendingRecommendations={aId,nId,items};
+  renderRecommendations();
+}
+function recommendationRow(item,i){
+  const labels={task:'Create task',followup:'Add follow-up',decision:'Save decision'};
+  return '<div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin:8px 0;">'+
+    '<label style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:700;"><input type="checkbox" '+(item.approved?'checked':'')+' onchange="toggleRecommendation('+i+',this.checked)" />'+labels[item.type]+'</label>'+
+    '<label class="fl" style="margin-top:10px;">Review / edit suggestion</label>'+
+    '<textarea class="f" style="min-height:62px;" oninput="editRecommendation('+i+',\'text\',this.value)">'+esc(item.text)+'</textarea>'+
+    (item.type==='task'?'<div class="r2"><div><label class="fl">Owner (optional)</label><input class="f" value="'+esc(item.owner)+'" oninput="editRecommendation('+i+',\'owner\',this.value)" /></div><div><label class="fl">Due date (optional)</label><input class="f" type="date" value="'+esc(item.due)+'" onchange="editRecommendation('+i+',\'due\',this.value)" /></div></div>'+(item.dueText&&!item.due?'<div style="font-size:12px;color:var(--muted);">Mentioned deadline: '+esc(item.dueText)+' — choose an exact date only if known.</div>':''):'')+
+    '</div>';
+}
+function renderRecommendations(){
+  const p=pendingRecommendations;if(!p)return;
+  const el=document.getElementById('recommendations-'+p.aId+'-'+p.nId);if(!el)return;
+  el.innerHTML='<div class="add-card" style="margin:10px 0;">'+
+    '<div class="add-card-title">Review recommendations</div>'+
+    '<p style="font-size:12px;color:var(--muted);">Local rule-based suggestions, not an AI service. Nothing is saved until you select and approve. Review every suggestion for accuracy.</p>'+
+    (p.items.length?p.items.map(recommendationRow).join(''):'<p style="font-size:13px;color:var(--muted);">No structured actions found. Add headings such as Action Items, Decisions and Reasons, or Follow-ups to your notes, then try again.</p>')+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="add-btn2" onclick="approveRecommendations()">Approve selected</button><button class="tb" onclick="cancelRecommendations()">Cancel</button></div></div>';
+}
+function toggleRecommendation(i,checked){if(pendingRecommendations?.items[i])pendingRecommendations.items[i].approved=checked;}
+function editRecommendation(i,field,value){if(pendingRecommendations?.items[i])pendingRecommendations.items[i][field]=value;}
+function cancelRecommendations(){const p=pendingRecommendations;pendingRecommendations=null;if(p){const el=document.getElementById('recommendations-'+p.aId+'-'+p.nId);if(el)el.innerHTML='';}}
+function approveRecommendations(){
+  const p=pendingRecommendations;if(!p)return;
+  const acct=accounts.find(a=>a.id===p.aId),note=acct&&acct.notes.find(n=>n.id===p.nId);
+  if(!acct||!note)return;
+  const chosen=p.items.filter(x=>x.approved&&x.text.trim());
+  if(!chosen.length){toast('Select at least one recommendation.');return;}
+  let count=0;
+  for(const item of chosen){
+    const text=item.text.trim();
+    if(item.type==='task'){
+      if(acct.tasks.some(t=>t.sourceNoteId===p.nId&&t.sourceRecommendation===text))continue;
+      acct.tasks.unshift({id:Date.now()+count,text,status:'todo',priority:'',due:item.due||'',assignee:item.owner||'',sourceNoteId:p.nId,sourceMeetingTitle:note.title,sourceRecommendation:text});count++;
+    }else if(item.type==='decision'){
+      note.approvedDecisions=note.approvedDecisions||[];
+      if(!note.approvedDecisions.includes(text)){note.approvedDecisions.push(text);count++;}
+    }else if(item.type==='followup'){
+      note.approvedFollowups=note.approvedFollowups||[];
+      if(!note.approvedFollowups.includes(text)){note.approvedFollowups.push(text);count++;}
+    }
+  }
+  pendingRecommendations=null;
+  save();renderDetail();renderGlobalView();renderAll();
+  toast(count+' approved recommendation(s) saved.');
 }
 
 /* ---------- NOTES ---------- */
