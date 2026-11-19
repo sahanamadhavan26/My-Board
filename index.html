@@ -1581,7 +1581,7 @@ async function analyzeMeetingDraft(aId){
   if(!Array.isArray(data.items))throw Error('Local AI returned an invalid item list.');
   const allowed=new Set(['task','decision','followup']),seen=new Set();
   const items=data.items.filter(x=>x&&allowed.has(x.type)&&typeof x.text==='string'&&x.text.trim()).filter(x=>{const key=x.type+'|'+x.text.trim().toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).map((x,i)=>({id:i,type:x.type,text:x.text.trim(),owner:typeof x.owner==='string'?x.owner:'',due:/^\d{4}-\d{2}-\d{2}$/.test(x.due||'')?x.due:'',dueText:typeof x.dueText==='string'?x.dueText:'',evidence:typeof x.evidence==='string'?x.evidence:'',approved:false}));
-  smartDraft={aId,note,items,active:'all',person:'',summary:typeof data.summary==='string'?data.summary:'',blockers:Array.isArray(data.blockers)?data.blockers:[],questions:Array.isArray(data.questions)?data.questions:[]};
+  smartDraft={aId,note,items,active:'all',person:'',showTeam:!!profile.trackTeamByDefault,showDecisions:false,summary:typeof data.summary==='string'?data.summary:'',blockers:Array.isArray(data.blockers)?data.blockers:[],questions:Array.isArray(data.questions)?data.questions:[]};
   renderSmartDraft();
  }catch(err){
   if(el)el.innerHTML='<div style="padding:14px;border:1px solid var(--border);border-radius:12px;"><strong>Local AI could not run.</strong><p style="margin-top:8px;font-size:13px;color:var(--muted);">'+esc(err.message||'Unexpected error')+'</p><p style="margin-top:8px;font-size:12px;color:var(--muted);">Nothing was saved. This requires a compatible GPU, sufficient memory, and a model download.</p></div>';
@@ -1627,31 +1627,40 @@ function smartDraftUpdateCount(){
   const el=document.getElementById('smart-selected-count');
   if(el&&smartDraft)el.textContent=smartDraft.items.filter(x=>x.approved).length+' selected';
 }
+function smartDraftShowTeam(){if(!smartDraft)return;smartDraft.showTeam=!smartDraft.showTeam;renderSmartDraft();}
+function smartDraftShowDecisions(){if(!smartDraft)return;smartDraft.showDecisions=!smartDraft.showDecisions;renderSmartDraft();}
+function smartDraftSetTrackTeam(value){profile.trackTeamByDefault=value;saveProfile();if(smartDraft)smartDraft.showTeam=value;renderSmartDraft();}
 function renderSmartDraft(){
-  const d=smartDraft,el=document.getElementById('smart-draft-results');if(!el)return;
-  if(!d){el.innerHTML='';return;}
-  const types=[['task','Tasks','☑','#5B9CF6'],['decision','Decisions','✓','#24B99B'],['followup','Follow-ups','↗','#B58AF4']];
-  const totals=types.map(([t])=>d.items.filter(x=>x.type===t).length);
-  const people=[...new Set(d.items.filter(x=>x.type==='task'||x.type==='followup').map(x=>smartDraftOwner(x.owner)))].sort();
-  const visible=(type)=>d.items.map((x,i)=>({x,i})).filter(o=>o.x.type===type&&(!d.person||smartDraftOwner(o.x.owner)===d.person||type==='decision'));
-  const columns=types.filter(([t])=>d.active==='all'||d.active===t).map(([type,name,symbol,color])=>{
-    const matches=visible(type);
-    return '<section style="min-width:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card);">'+
-      '<div style="padding:12px 14px;border-top:3px solid '+color+';border-bottom:1px solid var(--border);font-weight:750;font-size:14px;">'+symbol+' '+name+' <span style="opacity:.6;font-size:12px;">'+matches.length+'</span></div>'+
-      '<div style="padding:2px 12px;overflow-y:auto;max-height:330px;min-height:80px;">'+
-      (matches.length?matches.map(o=>smartDraftCard(o.x,o.i)).join(''):'<p style="font-size:12px;color:var(--muted);padding:10px 0;">No items in this view</p>')+'</div></section>';
-  });
-  const tab=(id,label,color,count)=>'<button type="button" onclick="smartDraftFilter(\''+id+'\')" style="border:2px solid '+color+';background:'+(d.active===id?color:color+'20')+';color:'+(d.active===id?'#fff':'var(--text)')+';border-radius:10px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer;">'+label+' '+count+'</button>';
-  el.innerHTML='<div style="border:1px solid var(--border);border-radius:16px;padding:16px;">'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><div><div style="font-weight:750;font-size:18px;">✦ Smart Review</div><div style="font-size:12px;color:var(--muted);margin-top:5px;">Review local AI suggestions before saving. Verify owners and deadlines.</div></div><button class="tb" onclick="smartDraft=null;renderSmartDraft()">Close</button></div>'+
-    (d.summary?'<div style="margin-top:12px;padding:12px;border-radius:10px;background:var(--bg);font-size:13px;"><strong>Meeting summary</strong><p style="margin-top:6px;">'+esc(d.summary)+'</p></div>':'')+
-    ((d.blockers?.length||d.questions?.length)?'<div style="margin-top:10px;font-size:12px;color:var(--muted);">'+(d.blockers?.length?'⚠ Blockers: '+d.blockers.map(esc).join('; ')+'<br>':'')+(d.questions?.length?'Open questions: '+d.questions.map(esc).join('; '):'')+'</div>':'')+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;">'+tab('all','All','#5262C6',d.items.length)+types.map(([t,n,,c],i)=>tab(t,n,c,totals[i])).join('')+'</div>'+
-    '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;">'+
-    '<label style="font-size:12px;">Assigned to: <select class="f" style="display:inline-block;width:auto;margin:0;padding:7px 12px;" onchange="smartDraftPerson(this.value)"><option value="">Everyone</option>'+people.map(p=>'<option value="'+esc(p)+'" '+(d.person===p?'selected':'')+'>'+esc(p)+'</option>').join('')+'</select></label>'+
-    '<div style="display:flex;gap:10px;align-items:center;"><span id="smart-selected-count" style="font-size:12px;color:var(--muted);">'+d.items.filter(x=>x.approved).length+' selected</span><button class="tb" onclick="smartDraftSelectAll(true)">Select visible</button><button class="tb" onclick="smartDraftSelectAll(false)">Clear visible</button></div></div>'+
-    '<div style="display:grid;grid-template-columns:repeat('+columns.length+',minmax(0,1fr));gap:12px;min-width:0;">'+columns.join('')+'</div>'+
-    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;"><button class="add-btn2" onclick="saveSmartDraft()">Save meeting & approved items</button><span style="font-size:12px;color:var(--muted);">No items are added without your approval.</span></div></div>';
+ const d=smartDraft,el=document.getElementById('smart-draft-results');if(!el)return;
+ if(!d){el.innerHTML='';return;}
+ const me=(profile.name||'').trim().split(/\s+/)[0].toLowerCase();
+ const mine=x=>!!me&&String(x.owner||'').trim().toLowerCase().split(/\s+/)[0]===me;
+ const indexed=d.items.map((x,i)=>({x,i}));
+ const own=indexed.filter(o=>o.x.type!=='decision'&&mine(o.x));
+ const team=indexed.filter(o=>o.x.type!=='decision'&&!mine(o.x));
+ const decisions=indexed.filter(o=>o.x.type==='decision');
+ const section=(name,items,color,empty)=>'<section style="border:1px solid var(--border);border-radius:13px;overflow:hidden;margin-top:12px;background:var(--card);">'+
+  '<div style="border-top:3px solid '+color+';padding:11px 14px;border-bottom:1px solid var(--border);font-weight:750;font-size:14px;">'+name+' <span style="opacity:.6">'+items.length+'</span></div>'+
+  '<div style="padding:3px 12px;max-height:350px;overflow-y:auto;">'+(items.length?items.map(o=>smartDraftCard(o.x,o.i)).join(''):'<p style="font-size:12px;color:var(--muted);padding:12px;">'+empty+'</p>')+'</div></section>';
+ const ownTasks=own.filter(o=>o.x.type==='task'),ownFollowups=own.filter(o=>o.x.type==='followup');
+ const teamPeople=[...new Set(team.map(o=>smartDraftOwner(o.x.owner)))].sort();
+ const teamFilter=d.teamPerson||'';
+ const teamVisible=team.filter(o=>!teamFilter||smartDraftOwner(o.x.owner)===teamFilter);
+ const toggle=(name,fn,count,open)=>'<button type="button" class="tb" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px;margin-top:12px;border:1px solid var(--border);border-radius:12px;text-align:left;font-weight:700;" onclick="'+fn+'">'+name+' ('+count+') <span>'+(open?'▴ Hide':'▾ Show')+'</span></button>';
+ el.innerHTML='<div style="border:1px solid var(--border);border-radius:16px;padding:16px;">'+
+  '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;"><div><div style="font-weight:750;font-size:18px;">✦ Smart Review</div><p style="font-size:12px;color:var(--muted);margin-top:4px;">Your actions first. Review every suggestion before saving.</p></div><button class="tb" onclick="smartDraft=null;renderSmartDraft()">Close</button></div>'+
+  '<p style="font-size:12px;color:var(--muted);margin-top:12px;">Viewing as <strong>'+esc(profile.name||'You')+'</strong>. Change your name in Profile if needed.</p>'+
+  (d.summary?'<div style="background:var(--bg);padding:12px;border-radius:10px;margin-top:12px;font-size:13px;"><strong>Meeting summary</strong><p style="margin-top:6px;">'+esc(d.summary)+'</p></div>':'')+
+  section('☑ My Tasks',ownTasks,'#5B9CF6','No tasks assigned to you were identified.')+
+  section('↗ My Follow-ups',ownFollowups,'#B58AF4','No follow-ups assigned to you were identified.')+
+  toggle('👥 Other Assigned Tasks','smartDraftShowTeam()',team.length,!!d.showTeam)+
+  (d.showTeam?'<div style="margin-top:10px;font-size:12px;">Show person: <select class="f" style="display:inline-block;width:auto;padding:6px;margin:0;" onchange="smartDraft.teamPerson=this.value;renderSmartDraft()"><option value="">Everyone</option>'+teamPeople.map(p=>'<option value="'+esc(p)+'" '+(teamFilter===p?'selected':'')+'>'+esc(p)+'</option>').join('')+'</select></div>'+
+   section('Team Tasks & Follow-ups',teamVisible,'#24B99B','No other assigned actions identified.'):'')+
+  toggle('✓ Decisions','smartDraftShowDecisions()',decisions.length,!!d.showDecisions)+
+  (d.showDecisions?section('Meeting Decisions',decisions,'#24B99B','No confirmed decisions identified.'):'')+
+  ((d.blockers?.length||d.questions?.length)?'<div style="margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:12px;color:var(--muted);">'+(d.blockers?.length?'<strong>⚠ Blockers</strong><p>'+d.blockers.map(esc).join('; ')+'</p>':'')+(d.questions?.length?'<strong>Open questions</strong><p>'+d.questions.map(esc).join('; ')+'</p>':'')+'</div>':'')+
+  '<label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:14px;color:var(--muted);"><input type="checkbox" '+(profile.trackTeamByDefault?'checked':'')+' onchange="smartDraftSetTrackTeam(this.checked)">Show other assigned tasks by default</label>'+
+  '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;"><button class="add-btn2" onclick="saveSmartDraft()">Save meeting & approved items</button><span id="smart-selected-count" style="font-size:12px;color:var(--muted);">'+d.items.filter(x=>x.approved).length+' selected · Nothing added without approval</span></div></div>';
 }
 function saveSmartDraft(){
   const d=smartDraft;if(!d)return;
