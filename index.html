@@ -1340,6 +1340,12 @@ function renderDetail(){
 
     <div class="dsec" id="ds-notes">
       <div class="add-card">
+        <div class="meeting-launch" style="border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;">
+          <div style="font-weight:700;margin-bottom:6px;">Meeting notetaker</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Invite a visible My Board Notetaker to a Teams, Zoom, or Google Meet call. Manual notes remain available below.</p>
+          <button class="add-btn2" onclick="openMeetingNotetaker(${a.id})">✦ Take Meeting Notes</button>
+          <div id="meeting-notetaker-panel" style="margin-top:12px;"></div>
+        </div>
         <p class="add-card-title">${tr('newCallNote')}</p>
         <p class="fl">${tr('callTitle')}</p><input class="f" id="nt-title" placeholder="${esc(tr('callTitlePh'))}" />
         <div class="work-only"><p class="fl">${tr('subject')}</p><input class="f" id="nt-sub" placeholder="${esc(tr('subjectPh'))}" /></div>
@@ -1373,6 +1379,120 @@ function addTask(aId){
   const a=accounts.find(a=>a.id===aId);
   a.tasks.unshift({id:Date.now(),text,status:document.getElementById('tk-st').value,priority:document.getElementById('tk-pr').value,due:document.getElementById('tk-due').value,assignee:isWork()?document.getElementById('tk-as').value.trim():''});
   afterTaskChange();
+}
+
+/* ---------- MEETING NOTETAKER ---------- */
+const meetingSessionState = {};
+const SAMPLE_MEETING_TRANSCRIPT = [
+  "00:00 Maya: We need to decide whether to release the onboarding redesign this week.",
+  "03:10 Alex: Mobile onboarding is confusing. We should simplify the first two screens.",
+  "07:00 Maya: Initially let's set the review deadline to Thursday.",
+  "11:15 Priya: We should test the new copy with five fictional users.",
+  "16:40 Alex: I will prepare the updated prototype by Friday.",
+  "21:05 Maya: We have not assigned anyone to prepare the release checklist.",
+  "27:55 Priya: The analytics instrumentation is still blocked by a missing event definition.",
+  "29:10 Maya: Correction: the review deadline is NEXT MONDAY, not Thursday.",
+  "30:15 Alex: After reviewing the risks, let's NOT release this week. We will run the usability test first.",
+  "30:35 Maya: Agreed. The decision is to delay release until after testing because the mobile flow needs validation."
+].join("\\n");
+function meetingNotesFromSample(){
+  return [
+    "SAMPLE TRANSCRIPT — FICTIONAL MEETING (not a real recording)",
+    "",
+    "Key Discussion Points",
+    "• Mobile onboarding needs simpler first screens.",
+    "• Five-person usability test proposed before release.",
+    "• Analytics instrumentation is blocked by a missing event definition.",
+    "",
+    "Decisions and Reasons",
+    "• Delay the release until after usability testing; the mobile flow needs validation. This supersedes the earlier suggestion to release this week.",
+    "• Review deadline changed from Thursday to next Monday (final stated deadline).",
+    "",
+    "Action Items",
+    "• Prepare updated prototype — Owner: Alex; deadline: Friday.",
+    "• Prepare release checklist — Owner: Not stated; deadline: Not stated.",
+    "• Test revised copy with five fictional users — Owner: Not stated; deadline: Not stated.",
+    "",
+    "Open Questions or Blockers",
+    "• Who owns the release checklist?",
+    "• Missing analytics event definition blocks instrumentation.",
+    "",
+    "Coverage: Complete for the supplied fictional transcript. Relative deadlines are preserved exactly as stated."
+  ].join("\\n");
+}
+function openMeetingNotetaker(aId){
+  const host=document.getElementById('meeting-notetaker-panel');if(!host)return;
+  host.innerHTML=`<label class="fl" for="meeting-url">Meeting link</label>
+    <input class="f" id="meeting-url" type="url" placeholder="Paste Teams, Zoom or Google Meet link" />
+    <label style="display:flex;gap:8px;font-size:13px;line-height:1.5;margin:10px 0;">
+      <input type="checkbox" id="meeting-consent" />
+      <span>I confirm that participants have been informed and any required permission has been obtained.</span>
+    </label>
+    <div id="meeting-status" role="status" aria-live="polite" style="font-size:13px;color:var(--muted);margin:10px 0;">Not started. Bot credentials and secure backend required for live meetings.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="add-btn2" onclick="startMeetingNotetaker(${aId})">Join meeting</button>
+      <button class="tb" onclick="stopMeetingNotetaker(${aId})">Stop Notetaker</button>
+      <button class="tb" onclick="runSampleMeeting(${aId})">Try fictional transcript</button>
+    </div>`;
+}
+function meetingStatus(text){const el=document.getElementById('meeting-status');if(el)el.textContent=text;}
+function isSupportedMeetingUrl(raw){
+  try{const u=new URL(raw);if(u.protocol!=='https:')return false;
+    return /(^|\\.)(teams\\.microsoft\\.com|meet\\.google\\.com|zoom\\.us)$/.test(u.hostname);
+  }catch{return false;}
+}
+async function startMeetingNotetaker(aId){
+  const url=document.getElementById('meeting-url')?.value.trim()||'';
+  if(!isSupportedMeetingUrl(url)){meetingStatus('Unable to join: paste a valid HTTPS Teams, Zoom, or Google Meet link.');return;}
+  if(!document.getElementById('meeting-consent')?.checked){meetingStatus('Permission confirmation is required before inviting the bot.');return;}
+  meetingStatus('Connecting to secure notetaker service…');
+  try{
+    const res=await fetch('/api/meetings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meeting_url:url,account_id:aId,consent_confirmed:true})});
+    if(!res.ok)throw Error(res.status===404?'Live meeting backend is not deployed.':'Meeting service returned '+res.status);
+    const data=await res.json();if(!data.session_id)throw Error('Missing meeting session ID');
+    meetingSessionState[aId]={sessionId:data.session_id};
+    meetingStatus('Joining meeting — My Board Notetaker is visible to participants.');
+    pollMeetingNotetaker(aId);
+  }catch(err){meetingStatus('Unable to join: '+err.message+' Manual notes and sample mode still work.');}
+}
+async function pollMeetingNotetaker(aId){
+  const session=meetingSessionState[aId];if(!session||session.stopped)return;
+  try{
+    const res=await fetch('/api/meetings/'+encodeURIComponent(session.sessionId));
+    if(!res.ok)throw Error('Status unavailable');
+    const data=await res.json();
+    const states={joining:'Joining meeting',waiting:'Waiting for host admission',recording:'Taking notes',processing:'Processing full transcript',failed:'Unable to join',completed:'Notes ready'};
+    meetingStatus(states[data.status]||data.status||'Waiting for update');
+    if(data.status==='completed'&&data.notes){
+      const acct=accounts.find(a=>a.id===aId);if(!acct)return;
+      if(!acct.notes.some(n=>n.meetingSessionId===session.sessionId)){
+        acct.notes.unshift({id:Date.now(),meetingSessionId:session.sessionId,title:data.title||'Meeting notes',sub:'My Board Notetaker',att:'',dateRaw:todayISO(),body:data.notes,sum:'',showRaw:false});
+        save();renderDetail();renderAll();
+      }
+      delete meetingSessionState[aId];return;
+    }
+    if(data.status==='failed'||data.status==='stopped')return;
+    setTimeout(()=>pollMeetingNotetaker(aId),4000);
+  }catch(err){meetingStatus('Unable to retrieve meeting status: '+err.message);}
+}
+async function stopMeetingNotetaker(aId){
+  const session=meetingSessionState[aId];
+  if(!session){meetingStatus('No active notetaker to stop.');return;}
+  try{
+    const res=await fetch('/api/meetings/'+encodeURIComponent(session.sessionId)+'/stop',{method:'POST'});
+    if(!res.ok)throw Error('Server did not confirm stop');
+    session.stopped=true;meetingStatus('Notetaker stopped. Processing may continue if a transcript is available.');
+  }catch(err){meetingStatus('Unable to stop bot: '+err.message);}
+}
+function runSampleMeeting(aId){
+  const acct=accounts.find(a=>a.id===aId);if(!acct)return;
+  const sessionId='fictional-notetaker-test-v1';
+  if(!acct.notes.some(n=>n.meetingSessionId===sessionId)){
+    acct.notes.unshift({id:Date.now(),meetingSessionId:sessionId,title:'Sample: Onboarding release review',sub:'Fictional meeting — sample only',att:'Maya, Alex, Priya (fictional)',dateRaw:todayISO(),body:meetingNotesFromSample(),sum:'',showRaw:false});
+    save();
+  }
+  renderDetail();renderAll();
+  meetingStatus('Sample notes saved. No bot joined and no real meeting was recorded.');
 }
 
 /* ---------- NOTES ---------- */
