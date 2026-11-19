@@ -1532,9 +1532,10 @@ function smartDraftCard(item,i){
   const clean=item.text.replace(/\s*[—–-]\s*Owner:.*$/i,'').replace(/\s*\([^)]*requested\)$/i,'').trim();
   const person=item.owner?'<span style="font-size:12px;color:var(--muted);">👤 '+esc(item.owner)+'</span>':'';
   const due=item.due?'<span style="font-size:12px;color:var(--muted);">📅 '+esc(item.due)+'</span>':'';
-  return '<div style="border-bottom:1px solid var(--border);padding:12px 2px;min-width:0;">'+
+  return '<div id="smart-item-'+i+'" style="border-bottom:1px solid var(--border);padding:12px 8px;min-width:0;border-radius:9px;background:'+(item.approved?color+'18':'transparent')+';">'+
     '<div style="display:flex;align-items:flex-start;gap:9px;min-width:0;">'+
-    '<input type="checkbox" aria-label="Approve '+label+'" style="margin-top:4px;accent-color:'+color+';" '+(item.approved?'checked':'')+' onchange="smartDraftCheck('+i+',this.checked);smartDraftUpdateCount()">'+
+    '<label style="display:flex;flex:1;align-items:flex-start;gap:9px;min-width:0;cursor:pointer;">'+
+    '<input id="smart-check-'+i+'" type="checkbox" aria-label="Approve '+label+'" style="margin-top:4px;accent-color:'+color+';" '+(item.approved?'checked':'')+' onchange="smartDraftCheck('+i+',this.checked);smartDraftUpdateCount();smartDraftHighlight('+i+',this.checked)">'+
     '<div style="flex:1;min-width:0;"><div style="font-size:13px;line-height:1.5;font-weight:600;overflow-wrap:anywhere;">'+esc(clean)+'</div>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">'+person+due+'</div></div>'+
     '<button class="tb" type="button" style="color:'+color+';flex-shrink:0;" onclick="smartDraftToggleEdit('+i+')">Edit</button></div>'+
@@ -1546,6 +1547,7 @@ function smartDraftCard(item,i){
       [['','No reminder'],['0','At due time'],['60','1 hour before'],['120','2 hours before'],['1440','1 day before']].map(([v,n])=>'<option value="'+v+'" '+(String(item.remindBefore||'')===v?'selected':'')+'>'+n+'</option>').join('')+'</select>':'')+
     '<button class="tb" onclick="smartDraftToggleEdit('+i+')">Done</button></div></div>';
 }
+function smartDraftHighlight(i,checked){const el=document.getElementById('smart-item-'+i);if(el&&smartDraft){const t=smartDraft.items[i]?.type;el.style.background=checked?({task:'#5B9CF6',decision:'#24B99B',followup:'#B58AF4'}[t]||'#5B9CF6')+'18':'transparent';}}
 function smartDraftUpdateCount(){
   const el=document.getElementById('smart-selected-count');
   if(el&&smartDraft)el.textContent=smartDraft.items.filter(x=>x.approved).length+' selected';
